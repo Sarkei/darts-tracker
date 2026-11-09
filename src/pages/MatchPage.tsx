@@ -61,6 +61,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
   const [sound, setSound] = useState(() => localStorage.getItem('darts.sound') !== '0');
   const [copied, setCopied] = useState(false);
   const [hasRole, setHasRole] = useState(true);
+  const [inputOpen, setInputOpen] = useState(() => localStorage.getItem('darts.inputOpen') === '1');
   const me = useMemo(() => myDeviceId(), []);
   const spokenVisit = useRef<number | null>(null);
   useWakeLock(!state?.finished);
@@ -171,7 +172,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       else if (key === 'backspace') {
         e.preventDefault();
         void act(() => api(`/matches/${matchId}/darts/last`, { method: 'DELETE' }));
-      } else if (key === ' ' || key === 'escape') {
+      } else if ((key === ' ' || key === 'escape') && inputOpen) {
         e.preventDefault();
         void act(() => api(`/matches/${matchId}/visits/end`, { method: 'POST' }));
       } else if (/^[1-9]$/.test(key)) {
@@ -257,83 +258,6 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           </div>
         </div>
       )}
-
-      <div className="card flex flex-wrap items-center justify-between gap-2 p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="chip">
-            <MonitorSmartphone className="h-3.5 w-3.5" />
-            {devices.find((d) => d.deviceId === me)?.role === 'camera' ? 'Dieses Gerät: Kamera' : 'Dieses Gerät: Dashboard'}
-          </span>
-          {cameraDevice ? (
-            <span
-              className={`chip ${
-                cameraDevice.status?.quality === 'good'
-                  ? 'chip-on'
-                  : cameraDevice.status?.quality === 'bad'
-                    ? '!border-[#ff7a86] !text-[#ff9aa3]'
-                    : ''
-              }`}
-              title={cameraDevice.status?.message ?? ''}
-            >
-              <Camera className="h-3.5 w-3.5" />
-              Kamera {cameraDevice.status?.quality === 'good' ? 'gut' : cameraDevice.status?.quality === 'ok' ? 'okay' : 'unklar'}
-            </span>
-          ) : (
-            <span className="chip">Keine Kamera verbunden</span>
-          )}
-          {cameraDevice?.status?.message && (
-            <span className="text-xs text-[#a9b9d4]">{cameraDevice.status.message}</span>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button className="btn !px-3 !py-2 text-xs" onClick={() => onNavigate(`/match/${matchId}/camera`)}>
-            <Camera className="h-3.5 w-3.5" /> Kamera auf diesem Gerät
-          </button>
-          <button
-            className="btn !px-3 !py-2 text-xs"
-            onClick={async () => {
-              await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'dashboard', name: 'Dashboard' } });
-              await loadSide();
-            }}
-          >
-            Als Dashboard
-          </button>
-        </div>
-      </div>
-
-      <div className="card flex flex-wrap items-center justify-between gap-2 p-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[#a9b9d4]">Zuschauer-Code</span>
-          <span className="rounded-lg bg-[#1b2b45] px-2 py-1 font-mono text-sm font-bold tracking-widest">
-            {state.match.shareCode ?? '—'}
-          </span>
-          <button
-            className="btn !px-2 !py-1 text-xs"
-            onClick={async () => {
-              const url = `${window.location.origin}/#/watch/${state.match.shareCode}`;
-              await navigator.clipboard?.writeText(url).catch(() => undefined);
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1500);
-            }}
-          >
-            <Copy className="h-3.5 w-3.5" /> {copied ? 'kopiert' : 'Link kopieren'}
-          </button>
-          <button className="btn !px-2 !py-1 text-xs" onClick={() => onNavigate(`/match/${matchId}/remote`)}>
-            Fernbedienung
-          </button>
-        </div>
-        <button
-          className="btn !px-2 !py-1 text-xs"
-          onClick={() => {
-            const next = !sound;
-            setSound(next);
-            localStorage.setItem('darts.sound', next ? '1' : '0');
-          }}
-        >
-          {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-          {sound ? 'Ansage an' : 'Ansage aus'}
-        </button>
-      </div>
 
       {candidates.length > 0 && (
         <div className="card border-[#ffcf6b] p-4">
@@ -423,34 +347,54 @@ export function MatchPage({ matchId, onNavigate }: Props) {
         </div>
       )}
 
+      {/* Anzeigetafel: alle Spieler, der aktive hervorgehoben */}
+      <div className={`grid gap-2 ${state.players.length > 2 ? 'sm:grid-cols-2' : 'grid-cols-2'}`}>
+        {state.players.map((p) => {
+          const isActive = p.matchPlayerId === state.currentMatchPlayerId && !state.finished;
+          return (
+            <div
+              key={p.matchPlayerId}
+              className={`card p-4 text-center transition-colors ${
+                isActive ? 'border-[var(--color-accent)] bg-[#12281d]' : 'opacity-80'
+              }`}
+            >
+              <p className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#a9b9d4]">
+                <Avatar value={p.avatar} className="h-3.5 w-3.5" />
+                <span className="truncate">{p.name}</span>
+              </p>
+              <p className={`mt-1 font-black leading-none tabular-nums ${isActive ? 'text-[clamp(3rem,11vw,5rem)]' : 'text-[clamp(2rem,8vw,3.5rem)] text-[#c3d1e8]'}`}>
+                {p.remaining}
+              </p>
+              <p className="mt-1 text-[11px] uppercase tracking-widest text-[#8fa0bd]">
+                {state.match.format === 'sets' ? `${p.setsWon} Sätze · ${p.legsWon} Legs` : `${p.legsWon} Legs`}
+                {isActive && ' · dran'}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
       {active && !state.finished && (
-        <div className="card p-5 text-center">
-          <div className="flex items-center justify-center gap-2 text-sm text-[var(--color-muted)]">
-            <span className="text-xl">{active.avatar}</span>
-            <span className="font-bold uppercase tracking-widest">{active.name} ist dran</span>
-          </div>
-          <p className="mt-1 text-[clamp(3.5rem,18vw,7rem)] font-black leading-none tabular-nums">
-            {active.remaining}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-muted)]">
+        <div className="card space-y-2 p-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-muted)]">
             <span className="chip">
-              {state.match.format === 'sets' ? `Satz ${Math.min((state.match.bestOfSets ?? 1), 1 + Math.floor((state.currentLegIndex - 1) / (state.match.bestOf ?? 3)))} · Leg ${state.currentLegIndex}` : `Leg ${state.currentLegIndex}`}
+              {state.match.format === 'sets'
+                ? `Satz ${Math.min(state.match.bestOfSets ?? 1, 1 + Math.floor((state.currentLegIndex - 1) / (state.match.bestOf ?? 3)))} · Leg ${state.currentLegIndex}`
+                : `Leg ${state.currentLegIndex}`}
             </span>
-            <span className="chip">
-              Darts in diesem Zug: {dartsInVisit}/3
-            </span>
+            <span className="chip">Darts im Zug: {dartsInVisit}/3</span>
             {state.match.doubleIn && !active.entered && <span className="chip !text-[var(--color-warn)]">Double-In offen</span>}
             {state.match.doubleOut && <span className="chip">Double-Out</span>}
           </div>
 
           {active.bogeyHint && (
-            <p className="mt-3 rounded-xl border border-[#ffcf6b]/50 bg-[#2a2110] px-3 py-2 text-sm text-[#ffcf6b]">
+            <p className="rounded-xl border border-[#ffcf6b]/50 bg-[#2a2110] px-3 py-2 text-center text-sm text-[#ffcf6b]">
               {active.remaining} ist nicht in drei Darts finishbar — {active.bogeyHint.toLowerCase()}.
             </p>
           )}
 
           {route && (
-            <div className="mt-4 rounded-2xl border border-[#2c8f56] bg-[#0d3521] p-3">
+            <div className="rounded-2xl border border-[#2c8f56] bg-[#0d3521] p-3 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent)]">Checkout</p>
               <p className="mt-1 text-2xl font-extrabold tracking-wide">{route.label}</p>
               {alternatives.length > 0 && (
@@ -460,10 +404,29 @@ export function MatchPage({ matchId, onNavigate }: Props) {
               )}
             </div>
           )}
+
+          {active.remaining > 170 && (
+            <p className="text-center text-xs text-[#8fa0bd]">
+              Noch {active.remaining - 170} Punkte bis zum ersten Finish-Fenster.
+            </p>
+          )}
         </div>
       )}
 
       {!state.finished && active && (
+        <button
+          className={`btn w-full ${inputOpen ? '' : 'btn-primary'}`}
+          onClick={() => {
+            const next = !inputOpen;
+            setInputOpen(next);
+            localStorage.setItem('darts.inputOpen', next ? '1' : '0');
+          }}
+        >
+          {inputOpen ? 'Eingabe schließen' : 'Würfe eingeben'}
+        </button>
+      )}
+
+      {!state.finished && active && inputOpen && (
         <div className="card p-4">
           <div className="mx-auto mb-3 grid max-w-md grid-cols-3 gap-2">
             {RINGS.map((r) => (
@@ -544,6 +507,57 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             );
           })}
           {recentVisits.length === 0 && <p className="text-sm text-[var(--color-muted)]">Noch keine Würfe.</p>}
+        </div>
+      </div>
+
+      <div className="card space-y-2 p-3">
+        <p className="label">Geräte & Teilen</p>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="chip">
+            <MonitorSmartphone className="h-3.5 w-3.5" />
+            {devices.find((d) => d.deviceId === me)?.role === 'camera' ? 'Kamera' : 'Dashboard'}
+          </span>
+          {cameraDevice ? (
+            <span className={`chip ${cameraDevice.status?.quality === 'good' ? 'chip-on' : ''}`}>
+              <Camera className="h-3.5 w-3.5" /> Kamera {cameraDevice.status?.quality === 'good' ? 'gut' : 'unklar'}
+            </span>
+          ) : (
+            <span className="chip">keine Kamera</span>
+          )}
+          <button className="btn !px-2 !py-1 text-xs" onClick={() => onNavigate(`/match/${matchId}/camera`)}>
+            <Camera className="h-3.5 w-3.5" /> Kamera hier
+          </button>
+          <button className="btn !px-2 !py-1 text-xs" onClick={() => onNavigate(`/match/${matchId}/remote`)}>
+            Fernbedienung
+          </button>
+          <button
+            className="btn !px-2 !py-1 text-xs"
+            onClick={() => {
+              const next = !sound;
+              setSound(next);
+              localStorage.setItem('darts.sound', next ? '1' : '0');
+            }}
+          >
+            {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            {sound ? 'an' : 'aus'}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-[#a9b9d4]">Zuschauer-Code</span>
+          <span className="rounded-lg bg-[#1b2b45] px-2 py-1 font-mono text-sm font-bold tracking-widest">
+            {state.match.shareCode ?? '—'}
+          </span>
+          <button
+            className="btn !px-2 !py-1 text-xs"
+            onClick={async () => {
+              const url = `${window.location.origin}/#/watch/${state.match.shareCode}`;
+              await navigator.clipboard?.writeText(url).catch(() => undefined);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1500);
+            }}
+          >
+            <Copy className="h-3.5 w-3.5" /> {copied ? 'kopiert' : 'Link kopieren'}
+          </button>
         </div>
       </div>
 

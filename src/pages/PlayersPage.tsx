@@ -37,7 +37,13 @@ export function PlayersPage() {
       await load();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Fehler';
-      setError(msg === 'player-in-use' ? 'Dieser Spieler hat schon Matches — Profile bleiben erhalten.' : msg);
+      setError(
+        msg === 'own-profile'
+          ? 'Dein eigenes Profil hängt am Konto — Namen in den Einstellungen ändern.'
+          : msg === 'forbidden'
+            ? 'Das Profil gehört zu einem anderen Konto.'
+            : msg,
+      );
     }
   };
 

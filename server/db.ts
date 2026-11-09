@@ -35,6 +35,7 @@ export async function initDb() {
       is_guest boolean not null default false,
       created_at timestamptz not null default now()
     );
+    alter table players add column if not exists archived boolean not null default false;
     create unique index if not exists players_owner_unique on players(owner_id) where owner_id is not null;
 
     create table if not exists matches (

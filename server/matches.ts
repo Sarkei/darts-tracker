@@ -246,6 +246,17 @@ matchesRouter.patch('/:id/darts/:dartId', requireMatchAccess, async (req: AuthRe
   res.json(next);
 });
 
+/**
+ * Match endgültig löschen (Historie). Zugehörige Würfe, Legs, Geräte und Vorschläge hängen per
+ * ON DELETE CASCADE daran; Turnier-Slots verlieren nur die Verknüpfung.
+ */
+matchesRouter.delete('/:id', requireMatchAccess, async (req: AuthRequest, res) => {
+  const matchId = Number(req.params.id);
+  await query('delete from matches where id = $1', [matchId]);
+  broadcast(matchId, 'match', { action: 'deleted' });
+  res.json({ ok: true });
+});
+
 matchesRouter.post('/:id/abandon', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   await query("update matches set status = 'abandoned', finished_at = now() where id = $1 and status = 'active'", [matchId]);

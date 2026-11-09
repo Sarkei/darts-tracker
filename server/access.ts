@@ -27,6 +27,11 @@ export async function requireMatchAccess(req: AuthRequest, res: Response, next: 
     res.status(400).json({ error: 'invalid-match' });
     return;
   }
+  const exists = await query('select 1 from matches where id = $1', [matchId]);
+  if (!exists.rowCount) {
+    res.status(404).json({ error: 'not-found' });
+    return;
+  }
   const role = await matchRole(matchId, req.userId!);
   if (!role) {
     res.status(403).json({ error: 'forbidden', message: 'Dieses Match gehört zu einem anderen Konto.' });

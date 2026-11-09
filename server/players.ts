@@ -11,14 +11,13 @@ playersRouter.get('/', async (req: AuthRequest, res) => {
     `select p.id, p.name, p.avatar, p.is_guest, p.owner_id,
             (select count(*) from match_players mp where mp.player_id = p.id) as matches
        from players p
-      where p.owner_id = $1
-         or p.owner_id is null
-         or exists (
+      where (p.owner_id = $1 or p.owner_id is null or exists (
               select 1 from match_players mine
                 join players own on own.id = mine.player_id
                 join match_players other on other.match_id = mine.match_id
                where own.owner_id = $1 and other.player_id = p.id
-            )
+            ))
+        and coalesce(p.archived, false) = false
       order by p.is_guest, lower(p.name)`,
     [req.userId],
   );
@@ -63,22 +62,29 @@ playersRouter.patch('/:id', async (req: AuthRequest, res) => {
   res.json({ player: updated.rows[0] });
 });
 
+/**
+ * Spieler entfernen: Profile mit Konto bleiben (sonst verliert jemand seine Historie), Gäste
+ * werden archiviert — sie verschwinden aus Auswahl und Rangliste, bleiben aber in alten Matches.
+ */
 playersRouter.delete('/:id', async (req: AuthRequest, res) => {
   const id = Number(req.params.id);
-  const used = await query('select count(*)::int as n from match_players where player_id = $1', [id]);
-  if (used.rows[0].n > 0) {
-    res.status(409).json({ error: 'player-in-use' });
-    return;
-  }
   const own = await query<{ owner_id: number | null }>('select owner_id from players where id = $1', [id]);
   if (!own.rowCount) {
     res.status(404).json({ error: 'not-found' });
     return;
   }
-  if (own.rows[0].owner_id !== null && own.rows[0].owner_id !== req.userId) {
-    res.status(403).json({ error: 'forbidden' });
+  const owner = own.rows[0].owner_id;
+  if (owner === req.userId) {
+    res.status(409).json({
+      error: 'own-profile',
+      message: 'Dein eigenes Profil hängt am Konto. Ändere den Namen in den Einstellungen.',
+    });
     return;
   }
-  await query('delete from players where id = $1', [id]);
-  res.json({ ok: true });
+  if (owner !== null) {
+    res.status(403).json({ error: 'forbidden', message: 'Das Profil gehört zu einem anderen Konto.' });
+    return;
+  }
+  await query('update players set archived = true where id = $1', [id]);
+  res.json({ ok: true, archived: true });
 });
