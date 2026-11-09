@@ -150,3 +150,19 @@ Sobald ein Match endet, rückt der Sieger in die nächste Runde, das Finale ents
   beim Wiederverbinden raus.
 - Ton bei jedem erkannten Wurf, Anzeige der Bilder pro Sekunde.
 
+
+## Aufräumen
+
+- **Match löschen:** in der Historie das Papierkorb-Symbol — Match, Würfe, Legs und Geräte
+  verschwinden, die Statistik rechnet sie nicht mehr mit. Nur Ersteller und Teilnehmer dürfen das.
+- **Spieler entfernen:** Gäste werden archiviert und verschwinden aus Auswahl, Statistik-Auswahl und
+  Rangliste; in alten Matches bleiben ihre Namen erhalten. Das eigene Profil hängt am Konto und
+  lässt sich nur umbenennen (Einstellungen).
+
+## Dashboard vs. Fernbedienung
+
+Das Dashboard ist eine **Anzeigetafel**: alle Spieler groß mit Restscore, Legs/Sätzen, der aktive
+Spieler hervorgehoben, darunter Checkout-Weg, Bogey-Hinweis und die letzte Runde. Die Eingabe liegt
+hinter „Würfe eingeben" und ist standardmäßig geschlossen; Geräte-, Teilen- und Zuschauer-Optionen
+stehen unten. Die Fernbedienung (`/match/:id/remote`) bleibt ein reines Zahlenfeld.
+
