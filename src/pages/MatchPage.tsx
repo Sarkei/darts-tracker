@@ -217,7 +217,8 @@ export function MatchPage({ matchId, onNavigate }: Props) {
               key={p.matchPlayerId}
               className={`chip ${p.matchPlayerId === state.currentMatchPlayerId ? 'chip-on' : ''}`}
             >
-              <Avatar value={p.avatar} /> {p.name} · {p.legsWon}
+              <Avatar value={p.avatar} className="h-3.5 w-3.5" /> {p.name} ·{' '}
+              {state.match.format === 'sets' ? `${p.setsWon} S / ${p.legsWon} L` : p.legsWon}
             </span>
           ))}
         </div>
@@ -432,13 +433,21 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             {active.remaining}
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-muted)]">
-            <span className="chip">Leg {state.currentLegIndex}</span>
+            <span className="chip">
+              {state.match.format === 'sets' ? `Satz ${Math.min((state.match.bestOfSets ?? 1), 1 + Math.floor((state.currentLegIndex - 1) / (state.match.bestOf ?? 3)))} · Leg ${state.currentLegIndex}` : `Leg ${state.currentLegIndex}`}
+            </span>
             <span className="chip">
               Darts in diesem Zug: {dartsInVisit}/3
             </span>
             {state.match.doubleIn && !active.entered && <span className="chip !text-[var(--color-warn)]">Double-In offen</span>}
             {state.match.doubleOut && <span className="chip">Double-Out</span>}
           </div>
+
+          {active.bogeyHint && (
+            <p className="mt-3 rounded-xl border border-[#ffcf6b]/50 bg-[#2a2110] px-3 py-2 text-sm text-[#ffcf6b]">
+              {active.remaining} ist nicht in drei Darts finishbar — {active.bogeyHint.toLowerCase()}.
+            </p>
+          )}
 
           {route && (
             <div className="mt-4 rounded-2xl border border-[#2c8f56] bg-[#0d3521] p-3">

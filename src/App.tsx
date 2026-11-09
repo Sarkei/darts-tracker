@@ -14,6 +14,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { ResetPage } from './pages/ResetPage';
 import { WatchPage } from './pages/WatchPage';
 import { RemotePage } from './pages/RemotePage';
+import { TrainingPage } from './pages/TrainingPage';
 
 function currentRoute() {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -61,6 +62,7 @@ export default function App() {
     { to: '/', label: 'Start', icon: Home },
     { to: '/history', label: 'Historie', icon: History },
     { to: '/stats', label: 'Statistik', icon: BarChart3 },
+    { to: '/training', label: 'Training', icon: Target },
     { to: '/ranking', label: 'Rangliste', icon: Trophy },
     { to: '/players', label: 'Spieler', icon: Users },
   ];
@@ -115,6 +117,7 @@ export default function App() {
         {remoteDetail && <RemotePage matchId={Number(remoteDetail[1])} onNavigate={navigate} />}
         {route === '/history' && <HistoryPage onOpen={(id) => navigate(`/match/${id}`)} />}
         {route === '/stats' && <StatsPage />}
+        {route === '/training' && <TrainingPage />}
         {route === '/ranking' && <RankingPage />}
         {route === '/players' && <PlayersPage />}
         {route === '/settings' && <SettingsPage />}

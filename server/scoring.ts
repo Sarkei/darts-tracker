@@ -14,6 +14,12 @@ export interface MatchConfig {
   doubleOut: boolean;
   bestOf: number;
   status: string;
+  /** 'legs' = Best of Legs, 'sets' = Legs pro Satz + Best of Sets */
+  format?: 'legs' | 'sets';
+  bestOfSets?: number;
+  /** 'winner' = Sieger wirft das nächste Leg an, 'alternate' = abwechselnd */
+  throwOrder?: 'winner' | 'alternate';
+  firstPosition?: number;
 }
 
 export interface PlayerState {
@@ -25,11 +31,14 @@ export interface PlayerState {
   remaining: number;
   entered: boolean;
   legsWon: number;
+  setsWon: number;
   /** Würfe in dieser Leg (für die First-9-Statistik). */
   visitsThisLeg: number;
   pointsThisLeg: number;
   dartsThisLeg: number;
   checkoutSuggestion: CheckoutRoute[] | null;
+  /** Hinweis bei Bogey-Zahlen (nicht mit drei Darts finishbar). */
+  bogeyHint?: string | null;
 }
 
 export interface CheckoutThrow {
@@ -188,6 +197,24 @@ export function checkoutRoutes(remaining: number, doubleOut: boolean, dartsLeft 
   return top;
 }
 
+/**
+ * Zahlen, die mit drei Darts nicht finishbar sind (Bogey). Wer dort landet, muss
+ * erst auf einen Finish-Rest spielen — der Hinweis sagt, welcher Rest sinnvoll ist.
+ */
+const BOGEY: Record<number, string> = {
+  169: 'Bleib bei 170 oder spiel auf 160',
+  168: 'Spiel auf 160 oder 161',
+  166: 'Spiel auf 161 oder 164',
+  165: 'Spiel auf 164 oder 157',
+  163: 'Spiel auf 164 oder 161',
+  162: 'Spiel auf 161 oder 160',
+  159: 'Spiel auf 160 oder 158',
+};
+
+export function bogeyHint(remaining: number): string | null {
+  return BOGEY[remaining] ?? null;
+}
+
 // --- Replay: einzige Wahrheit ist die Wurfliste ------------------------------
 
 interface ReplayRow {
@@ -222,10 +249,12 @@ export function replayMatch(
       remaining: match.startScore,
       entered: !match.doubleIn,
       legsWon: 0,
+      setsWon: 0,
       visitsThisLeg: 0,
       pointsThisLeg: 0,
       dartsThisLeg: 0,
       checkoutSuggestion: null,
+      bogeyHint: null,
     });
   }
 
@@ -233,7 +262,7 @@ export function replayMatch(
   const visits: VisitView[] = [];
   const legs: MatchState['legs'] = [];
   let currentLegIndex = 1;
-  let turnPointer = 0;
+  let turnPointer = Math.min(Math.max(0, match.firstPosition ?? 0), ordered.length - 1);
   let finished = false;
   let winnerMatchPlayerId: number | null = null;
 
@@ -317,16 +346,23 @@ export function replayMatch(
     });
 
     if (checkout) {
-      legs.push({
-        legIndex: currentLegIndex,
-        winnerMatchPlayerId: state.matchPlayerId,
-        dartsThrown: darts.length,
-      });
+      const legWinner = state.matchPlayerId;
+      legs.push({ legIndex: currentLegIndex, winnerMatchPlayerId: legWinner, dartsThrown: darts.length });
       state.legsWon += 1;
 
-      const target = Math.ceil(match.bestOf / 2);
-      const legWinner = state.matchPlayerId;
-      const matchOver = state.legsWon >= target;
+      const setsMode = match.format === 'sets';
+      const setTarget = Math.ceil((match.bestOfSets ?? 1) / 2);
+      let matchOver = false;
+
+      if (setsMode) {
+        if (state.legsWon >= match.bestOf) {
+          state.setsWon += 1;
+          for (const s of states.values()) s.legsWon = 0;
+          if (state.setsWon >= setTarget) matchOver = true;
+        }
+      } else if (state.legsWon >= match.bestOf) {
+        matchOver = true;
+      }
 
       if (matchOver) {
         finished = true;
@@ -340,8 +376,15 @@ export function replayMatch(
           s.pointsThisLeg = 0;
           s.dartsThisLeg = 0;
         }
-        // Sieger des Legs wirft das nächste Leg an.
-        turnPointer = ordered.findIndex((p) => p.matchPlayerId === legWinner);
+        if (match.throwOrder === 'alternate') {
+          // Anwurf wechselt: Position des ersten Spielers + Legnummer
+          const n = ordered.length;
+          const starter = ((match.firstPosition ?? 0) + (currentLegIndex - 1)) % n;
+          turnPointer = starter;
+        } else {
+          // Sieger des Legs wirft das nächste Leg an.
+          turnPointer = ordered.findIndex((p) => p.matchPlayerId === legWinner);
+        }
       }
     } else if (bust || vis.visit_ended_early === true || darts.length >= 3) {
       // Nur ein abgeschlossener Zug gibt die Runde weiter — ein Zug mit 1–2 Darts läuft weiter.
@@ -353,6 +396,7 @@ export function replayMatch(
   const playerStates = [...states.values()].sort((a, b) => a.position - b.position);
 
   for (const p of playerStates) {
+    p.bogeyHint = !finished && p.matchPlayerId === current ? bogeyHint(p.remaining) : null;
     p.checkoutSuggestion =
       !finished && p.matchPlayerId === current && p.remaining <= 170 && p.remaining > 1
         ? checkoutRoutes(p.remaining, match.doubleOut)
@@ -385,7 +429,11 @@ export async function loadMatchState(matchId: number): Promise<MatchState | null
     status: string;
     winner_player_id: number | null;
     share_code: string | null;
-  }>('select id, name, start_score, double_in, double_out, best_of, mode, status, winner_player_id, share_code from matches where id = $1', [matchId]);
+    format: string | null;
+    best_of_sets: number | null;
+    throw_order: string | null;
+    first_position: number | null;
+  }>('select id, name, start_score, double_in, double_out, best_of, mode, status, winner_player_id, share_code, format, best_of_sets, throw_order, first_position from matches where id = $1', [matchId]);
   if (!m.rowCount) return null;
   const match = m.rows[0];
 
@@ -418,6 +466,10 @@ export async function loadMatchState(matchId: number): Promise<MatchState | null
       bestOf: match.best_of,
       winnerPlayerId: match.winner_player_id,
       shareCode: match.share_code,
+      format: (match.format === 'sets' ? 'sets' : 'legs') as 'legs' | 'sets',
+      bestOfSets: match.best_of_sets ?? 1,
+      throwOrder: (match.throw_order === 'alternate' ? 'alternate' : 'winner') as 'winner' | 'alternate',
+      firstPosition: match.first_position ?? 0,
     },
     pl.rows.map((r) => ({
       matchPlayerId: r.id,

@@ -18,6 +18,10 @@ const createSchema = z.object({
   doubleOut: z.boolean().default(true),
   bestOf: z.number().int().min(1).max(15).default(3),
   mode: z.enum(['manual', 'auto']).default('manual'),
+  format: z.enum(['legs', 'sets']).default('legs'),
+  bestOfSets: z.number().int().min(1).max(9).default(1),
+  throwOrder: z.enum(['winner', 'alternate']).default('winner'),
+  firstPosition: z.number().int().min(0).max(7).default(0),
 });
 
 matchesRouter.get('/', async (req: AuthRequest, res) => {
@@ -53,7 +57,8 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
     res.status(400).json({ error: 'invalid-input', details: parsed.error.flatten() });
     return;
   }
-  const { name, playerIds, startScore, doubleIn, doubleOut, bestOf, mode } = parsed.data;
+  const { name, playerIds, startScore, doubleIn, doubleOut, bestOf, mode, format, bestOfSets, throwOrder } = parsed.data;
+  const firstPosition = Math.min(parsed.data.firstPosition, playerIds.length - 1);
   const unique = [...new Set(playerIds)];
   if (unique.length !== playerIds.length) {
     res.status(400).json({ error: 'duplicate-players' });
@@ -65,9 +70,10 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
     return;
   }
   const created = await query<{ id: number }>(
-    `insert into matches (created_by, name, start_score, double_in, double_out, best_of, mode, share_code)
-     values ($1,$2,$3,$4,$5,$6,$7, upper(substr(md5(random()::text), 1, 6))) returning id`,
-    [req.userId, name ?? '', startScore, doubleIn, doubleOut, bestOf, mode],
+    `insert into matches (created_by, name, start_score, double_in, double_out, best_of, mode, share_code,
+                          format, best_of_sets, throw_order, first_position)
+     values ($1,$2,$3,$4,$5,$6,$7, upper(substr(md5(random()::text), 1, 6)), $8, $9, $10, $11) returning id`,
+    [req.userId, name ?? '', startScore, doubleIn, doubleOut, bestOf, mode, format, bestOfSets, throwOrder, firstPosition],
   );
   const matchId = created.rows[0].id;
   for (let i = 0; i < unique.length; i += 1) {

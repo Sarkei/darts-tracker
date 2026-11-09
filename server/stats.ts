@@ -27,8 +27,11 @@ interface PlayerAggregate {
   checkouts: number;
   checkoutAttempts: number;
   busts: number;
+  /** Darts, die bei Rest ≤ 50 (also auf ein Doppel) geworfen wurden. */
+  doubleDarts: number;
   fields: Record<string, number>;
   numbers: Record<string, number>;
+  weeks: Record<string, { darts: number; points: number; visits: number; checkouts: number; attempts: number }>;
 }
 
 function emptyAggregate(playerId: number, name: string, avatar: string): PlayerAggregate {
@@ -54,8 +57,10 @@ function emptyAggregate(playerId: number, name: string, avatar: string): PlayerA
     checkouts: 0,
     checkoutAttempts: 0,
     busts: 0,
+    doubleDarts: 0,
     fields: {},
     numbers: {},
+    weeks: {},
   };
 }
 
@@ -66,7 +71,17 @@ function fieldKey(ring: string, number: number) {
   return `${prefix}${number}`;
 }
 
-function accumulate(agg: PlayerAggregate, state: MatchState, playerId: number) {
+function weekKey(iso: string | Date) {
+  const date = typeof iso === 'string' ? new Date(iso) : iso;
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+function accumulate(agg: PlayerAggregate, state: MatchState, playerId: number, matchDate = new Date()) {
   const mp = state.players.find((p) => p.playerId === playerId);
   if (!mp) return;
   agg.matches += 1;
@@ -78,23 +93,47 @@ function accumulate(agg: PlayerAggregate, state: MatchState, playerId: number) {
   agg.legsWon += ownLegs;
 
   let first9Visits = 0;
+  const week = weekKey(matchDate);
+  const weekStats = (agg.weeks[week] ??= { darts: 0, points: 0, visits: 0, checkouts: 0, attempts: 0 });
+  // Restscore vor jedem Zug mitführen, um „Doppelversuch" und „Checkout-Versuch" zu erkennen
+  let remaining = state.match.startScore;
+  let leg = 1;
+
   for (const visit of state.visits) {
+    if (visit.legIndex !== leg) {
+      leg = visit.legIndex;
+      remaining = state.match.startScore;
+    }
     if (visit.matchPlayerId !== mp.matchPlayerId) continue;
+    const before = remaining;
+    remaining = visit.remainingAfter;
+
+    if (state.match.doubleOut && before <= 170 && before > 1) {
+      agg.checkoutAttempts += 1;
+      weekStats.attempts += 1;
+    }
+    if (before <= 50) agg.doubleDarts += visit.darts.length;
+
     agg.visits += 1;
+    weekStats.visits += 1;
     agg.points += visit.bust ? 0 : visit.score;
+    weekStats.points += visit.bust ? 0 : visit.score;
     if (visit.bust) agg.busts += 1;
     if (visit.score > agg.bestVisit) agg.bestVisit = visit.score;
     if (visit.score === 180) agg.count180 += 1;
     else if (visit.score >= 140) agg.count140 += 1;
     else if (visit.score >= 100) agg.count100 += 1;
-    if (visit.checkout) agg.checkouts += 1;
-    if (visit.checkout || visit.bust) agg.checkoutAttempts += 1;
+    if (visit.checkout) {
+      agg.checkouts += 1;
+      weekStats.checkouts += 1;
+    }
     if (first9Visits < 3) {
       agg.first9Points += visit.bust ? 0 : visit.score;
       first9Visits += 1;
     }
     for (const dart of visit.darts) {
       agg.darts += 1;
+      weekStats.darts += 1;
       if (first9Visits <= 3) agg.first9Darts += 1;
       const key = fieldKey(dart.ring, dart.number);
       agg.fields[key] = (agg.fields[key] ?? 0) + 1;
@@ -139,13 +178,22 @@ async function aggregatePlayers(playerIds: number[], from: string | null = null,
   const aggregates = new Map<number, PlayerAggregate>();
   for (const p of meta.rows) aggregates.set(p.id, emptyAggregate(p.id, p.name, p.avatar));
 
-  const matchIds = await matchesForPlayerIds(playerIds, from, to);
-  for (const matchId of matchIds) {
-    const state = await loadMatchState(matchId);
+  const matchRows = await query<{ id: number; created_at: string }>(
+    `select distinct m.id, m.created_at
+       from matches m join match_players mp on mp.match_id = m.id
+      where mp.player_id = any($1::int[])
+        and m.status in ('active','finished')
+        and ($2::timestamptz is null or m.created_at >= $2)
+        and ($3::timestamptz is null or m.created_at <= $3)
+      order by m.created_at`,
+    [playerIds, from, to],
+  );
+  for (const row of matchRows.rows) {
+    const state = await loadMatchState(row.id);
     if (!state) continue;
     for (const playerId of playerIds) {
       const agg = aggregates.get(playerId);
-      if (agg) accumulate(agg, state, playerId);
+      if (agg) accumulate(agg, state, playerId, new Date(row.created_at));
     }
   }
   return aggregates;
@@ -173,9 +221,19 @@ statsRouter.get('/', async (req: AuthRequest, res) => {
     ...agg,
     average: average3(agg),
     first9Average: first9(agg),
-    doubleQuote: agg.darts ? Math.round((agg.doubleHits / agg.darts) * 1000) / 10 : 0,
+    // Anteil der Darts, die auf ein Doppel geworfen wurden und auch trafen
+    doubleQuote: agg.doubleDarts ? Math.round((agg.doubleHits / agg.doubleDarts) * 1000) / 10 : 0,
     dartAverage: agg.darts ? Math.round((agg.points / agg.darts) * 100) / 100 : 0,
     checkoutQuote: agg.checkoutAttempts ? Math.round((agg.checkouts / agg.checkoutAttempts) * 1000) / 10 : 0,
+    history: Object.entries(agg.weeks)
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([week, w]) => ({
+        week,
+        average: w.darts ? Math.round(((w.points / w.darts) * 3) * 10) / 10 : 0,
+        checkouts: w.checkouts,
+        attempts: w.attempts,
+        darts: w.darts,
+      })),
   }));
   res.json({ players, from, to });
 });
@@ -242,6 +300,66 @@ export async function computeRanking() {
     .sort((a, b) => b.elo - a.elo || b.wins - a.wins);
   return ranking;
 }
+
+/**
+ * Head-to-Head: Bilanz gegen jeden Gegner, inklusive Average im direkten Vergleich.
+ * Grundlage sind alle Matches, an denen beide beteiligt waren.
+ */
+statsRouter.get('/h2h', async (req: AuthRequest, res) => {
+  const playerId = Number(req.query.playerId ?? 0) || null;
+  let ownId = playerId;
+  if (!ownId) {
+    const own = await query<{ id: number }>('select id from players where owner_id = $1', [req.userId]);
+    ownId = own.rows[0]?.id ?? null;
+  }
+  if (!ownId) {
+    res.json({ opponents: [] });
+    return;
+  }
+
+  const rows = await query<{ id: number; winner_player_id: number | null; players: Array<{ playerId: number; name: string; avatar: string }> }>(
+    `select m.id, m.winner_player_id,
+            coalesce((select json_agg(json_build_object('playerId', p.id, 'name', p.name, 'avatar', p.avatar))
+                        from match_players mp join players p on p.id = mp.player_id where mp.match_id = m.id), '[]'::json) as players
+       from matches m
+      where m.status = 'finished'
+        and exists (select 1 from match_players mp where mp.match_id = m.id and mp.player_id = $1)
+      order by m.id`,
+    [ownId],
+  );
+
+  const opponents = new Map<number, { playerId: number; name: string; avatar: string; wins: number; losses: number; legsFor: number; legsAgainst: number; lastAt: number }>();
+
+  for (const match of rows.rows) {
+    const state = await loadMatchState(match.id);
+    if (!state) continue;
+    const mine = state.players.find((p) => p.playerId === ownId);
+    if (!mine) continue;
+    for (const other of state.players) {
+      if (other.playerId === ownId) continue;
+      const entry = opponents.get(other.playerId) ?? {
+        playerId: other.playerId,
+        name: other.name,
+        avatar: other.avatar,
+        wins: 0,
+        losses: 0,
+        legsFor: 0,
+        legsAgainst: 0,
+        lastAt: 0,
+      };
+      if (state.match.winnerPlayerId === mine.matchPlayerId) entry.wins += 1;
+      else entry.losses += 1;
+      entry.legsFor += mine.legsWon;
+      entry.legsAgainst += other.legsWon;
+      entry.lastAt = Math.max(entry.lastAt, match.id);
+      opponents.set(other.playerId, entry);
+    }
+  }
+
+  res.json({
+    opponents: [...opponents.values()].sort((a, b) => b.wins + b.losses - (a.wins + a.losses) || b.wins - a.wins),
+  });
+});
 
 statsRouter.get('/ranking', async (_req, res) => {
   res.json({ ranking: await computeRanking() });

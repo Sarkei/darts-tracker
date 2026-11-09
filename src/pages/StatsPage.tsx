@@ -35,6 +35,24 @@ function heat(count: number, max: number) {
   return `rgba(56, 224, 123, ${alpha.toFixed(2)})`;
 }
 
+interface H2HRow {
+  playerId: number;
+  name: string;
+  avatar: string;
+  wins: number;
+  losses: number;
+  legsFor: number;
+  legsAgainst: number;
+}
+
+interface WeekRow {
+  week: string;
+  average: number;
+  checkouts: number;
+  attempts: number;
+  darts: number;
+}
+
 interface AiPlan {
   focus: string[];
   plan: Array<{ title: string; minutes: number; description: string }>;
@@ -48,6 +66,7 @@ export function StatsPage() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [plan, setPlan] = useState<AiPlan | null>(null);
+  const [h2h, setH2h] = useState<H2HRow[]>([]);
   const [planBusy, setPlanBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +99,17 @@ export function StatsPage() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8);
   }, [stats]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const data = await api<{ opponents: H2HRow[] }>(`/stats/h2h${playerId ? `?playerId=${playerId}` : ''}`);
+        setH2h(data.opponents);
+      } catch {
+        setH2h([]);
+      }
+    })();
+  }, [playerId]);
 
   const requestPlan = async () => {
     setPlanBusy(true);
@@ -152,7 +182,7 @@ export function StatsPage() {
             {[
               { label: 'Average', value: stats.average },
               { label: 'First 9', value: stats.first9Average },
-              { label: 'Doppel %', value: stats.doubleQuote },
+              { label: 'Doppel-Quote', value: `${stats.doubleQuote}%` },
               { label: 'Checkout %', value: stats.checkoutQuote },
               { label: '180er', value: stats.count180 },
               { label: '140+', value: stats.count140 },
@@ -233,6 +263,50 @@ export function StatsPage() {
               ))}
             </div>
           </div>
+
+          {stats.history && stats.history.length > 1 && (
+            <div className="card p-4">
+              <p className="label">Verlauf (3-Dart-Average pro Woche)</p>
+              <div className="flex items-end gap-2">
+                {stats.history.slice(-10).map((week) => {
+                  const max = Math.max(...stats.history!.map((w) => w.average), 1);
+                  return (
+                    <div key={week.week} className="flex flex-1 flex-col items-center gap-1">
+                      <div
+                        className="w-full rounded-t bg-[#3ee383]"
+                        style={{ height: `${Math.max(4, (week.average / max) * 90)}px` }}
+                        title={`${week.week}: ${week.average} Average`}
+                      />
+                      <span className="text-[10px] text-[#a9b9d4]">{week.week.split('-')[1]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-1 text-xs text-[#a9b9d4]">
+                Letzte Woche: {stats.history[stats.history.length - 1].average} Average ·{' '}
+                {stats.history[stats.history.length - 1].checkouts} Checkouts
+              </p>
+            </div>
+          )}
+
+          {h2h.length > 0 && (
+            <div className="card p-4">
+              <p className="label">Bilanz gegen Gegner</p>
+              <div className="space-y-1 text-sm">
+                {h2h.map((row) => (
+                  <div key={row.playerId} className="flex items-center justify-between gap-2">
+                    <span className="truncate">{row.name}</span>
+                    <span className={row.wins >= row.losses ? 'font-bold text-[#3ee383]' : 'font-bold text-[#ff9aa3]'}>
+                      {row.wins}:{row.losses}
+                    </span>
+                    <span className="text-xs text-[#a9b9d4]">
+                      Legs {row.legsFor}:{row.legsAgainst}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="card p-4">
             <div className="flex items-center justify-between gap-2">

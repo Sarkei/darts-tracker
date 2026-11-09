@@ -53,6 +53,11 @@ export async function initDb() {
       share_code text
     );
     alter table matches add column if not exists share_code text;
+    alter table matches add column if not exists format text not null default 'legs';
+    alter table matches add column if not exists best_of_sets integer not null default 1;
+    alter table matches add column if not exists throw_order text not null default 'winner';
+    alter table matches add column if not exists first_position integer not null default 0;
+    alter table matches add column if not exists leg_starter_position integer;
     create unique index if not exists matches_share_code on matches(share_code) where share_code is not null;
 
     create table if not exists match_players (
@@ -137,6 +142,19 @@ export async function initDb() {
       created_at timestamptz not null default now()
     );
     create index if not exists candidates_match on dart_candidates(match_id, status);
+
+    create table if not exists training_sessions (
+      id serial primary key,
+      user_id integer references users(id) on delete cascade,
+      player_id integer references players(id) on delete cascade,
+      mode text not null,
+      score integer not null default 0,
+      hits integer not null default 0,
+      darts integer not null default 0,
+      detail jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    );
+    create index if not exists training_user on training_sessions(user_id, created_at desc);
 
     create table if not exists ai_runs (
       id serial primary key,

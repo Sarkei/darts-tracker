@@ -6,6 +6,7 @@ import { authRouter, requireAuth } from './auth.js';
 import { playersRouter } from './players.js';
 import { matchesRouter, watchRouter } from './matches.js';
 import { statsRouter } from './stats.js';
+import { trainingRouter } from './training.js';
 import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
 import { devicesRouter } from './devices.js';
@@ -37,6 +38,7 @@ app.use('/api/players', requireAuth, playersRouter);
 app.use('/api/matches', requireAuth, devicesRouter);
 app.use('/api/matches', requireAuth, matchesRouter);
 app.use('/api/stats', requireAuth, statsRouter);
+app.use('/api/training', requireAuth, trainingRouter);
 app.use('/api/ai', requireAuth, aiRouter);
 
 const dist = path.resolve(process.cwd(), 'dist');

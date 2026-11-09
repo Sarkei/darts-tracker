@@ -37,6 +37,8 @@ export interface PlayerState {
   remaining: number;
   entered: boolean;
   legsWon: number;
+  setsWon: number;
+  bogeyHint?: string | null;
   visitsThisLeg: number;
   pointsThisLeg: number;
   dartsThisLeg: number;
@@ -68,6 +70,9 @@ export interface MatchState {
     status: string;
     winnerPlayerId: number | null;
     shareCode?: string | null;
+    format?: 'legs' | 'sets';
+    bestOfSets?: number;
+    throwOrder?: 'winner' | 'alternate';
   };
   players: PlayerState[];
   currentMatchPlayerId: number | null;
@@ -120,6 +125,7 @@ export interface PlayerStats {
   first9Average: number;
   doubleQuote: number;
   checkoutQuote: number;
+  history?: Array<{ week: string; average: number; checkouts: number; attempts: number; darts: number }>;
 }
 
 export interface RankingEntry {
