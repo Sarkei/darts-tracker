@@ -56,8 +56,64 @@ export function CameraPage({ matchId, onNavigate }: Props) {
   const [lastHit, setLastHit] = useState<{ label: string; ring: Ring; number: number; confidence: number; at: number } | null>(null);
   const [detections, setDetections] = useState(0);
   const [autoDetect, setAutoDetect] = useState(() => localStorage.getItem('darts.autoDetect') === '1');
+  const [probeMode, setProbeMode] = useState(false);
+  const [probe, setProbe] = useState({ thrown: 0, detected: 0 });
+  const [queued, setQueued] = useState(0);
+  const [fps, setFps] = useState(0);
+  const [drift, setDrift] = useState(false);
   const boardToImage = useRef<Matrix3 | null>(null);
   const [drawTick, setDrawTick] = useState(0);
+
+  const beep = useCallback(() => {
+    try {
+      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return;
+      const ctx = new Ctor();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.value = 0.08;
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.09);
+      window.setTimeout(() => void ctx.close(), 300);
+    } catch {
+      /* Ton ist optional */
+    }
+  }, []);
+
+  const enqueue = useCallback((payload: Record<string, unknown>) => {
+    try {
+      const raw = localStorage.getItem('darts.queue');
+      const list = raw ? (JSON.parse(raw) as unknown[]) : [];
+      list.push(payload);
+      localStorage.setItem('darts.queue', JSON.stringify(list.slice(-50)));
+      setQueued(list.length);
+    } catch {
+      /* Speicher voll — dann ist der Wurf verloren, aber nichts blockiert */
+    }
+  }, []);
+
+  const flushQueue = useCallback(async () => {
+    let list: Array<Record<string, unknown>> = [];
+    try {
+      const raw = localStorage.getItem('darts.queue');
+      list = raw ? (JSON.parse(raw) as Array<Record<string, unknown>>) : [];
+    } catch {
+      list = [];
+    }
+    if (!list.length) return;
+    const rest: Array<Record<string, unknown>> = [];
+    for (const item of list) {
+      try {
+        await api(`/matches/${matchId}/candidates`, { body: { ...item, deviceId: me.current } });
+      } catch {
+        rest.push(item);
+      }
+    }
+    localStorage.setItem('darts.queue', JSON.stringify(rest));
+    setQueued(rest.length);
+  }, [matchId]);
 
   const register = useCallback(async () => {
     try {
@@ -205,10 +261,40 @@ export function CameraPage({ matchId, onNavigate }: Props) {
   // Erkennungsschleife
   useEffect(() => {
     if (!calibrated || !matrix.current) return;
+    let tick = 0;
     const timer = window.setInterval(async () => {
       if (busy.current) return;
+      const started = performance.now();
       const gray = grabGray();
       if (!gray) return;
+
+      // Alle ~6 s prüfen, ob die Kamera noch auf dasselbe Board zeigt
+      tick += 1;
+      if (tick % 15 === 0 && points && matrix.current) {
+        const hit = findBoardCircle(gray);
+        if (hit) {
+          const size = videoSize();
+          const scale = size ? size.w / gray.width : 1;
+          const cx = hit.cx * scale;
+          const cy = hit.cy * scale;
+          const r = hit.r * scale;
+          const px = points.map((p) => ({ x: p.x * (size?.w ?? 1), y: p.y * (size?.h ?? 1) }));
+          const ocx = px.reduce((s, p) => s + p.x, 0) / 4;
+          const ocy = px.reduce((s, p) => s + p.y, 0) / 4;
+          const orad = px.reduce((s, p) => s + Math.hypot(p.x - ocx, p.y - ocy), 0) / 4;
+          const shift = Math.hypot(cx - ocx, cy - ocy) / Math.max(1, orad);
+          const scaleDiff = Math.abs(r - orad) / Math.max(1, orad);
+          setDrift(shift > 0.08 || scaleDiff > 0.1);
+          // Punkte still nachziehen: verschieben und skalieren, Drehung bleibt erhalten
+          if ((shift > 0.08 || scaleDiff > 0.1) && size) {
+            const sx = r / Math.max(1, orad);
+            const shifted = px.map((p) => ({ x: (cx + (p.x - ocx) * sx) / size.w, y: (cy + (p.y - ocy) * sx) / size.h }));
+            setPoints(shifted);
+            matrix.current = homographyFrom4(shifted, BOARD_TARGETS);
+            boardToImage.current = homographyFrom4(BOARD_TARGETS, shifted);
+          }
+        }
+      }
 
       if (!refGray.current) {
         refGray.current = gray;
@@ -255,6 +341,16 @@ export function CameraPage({ matchId, onNavigate }: Props) {
       // Referenz sofort nachziehen, damit derselbe Wurf nicht doppelt zählt
       refGray.current = gray;
       knownDarts.current.push({ x: nx, y: ny });
+      setLastHit({ label: dartLabel(field.ring, field.number), ring: field.ring, number: field.number, confidence, at: Date.now() });
+      setDetections((n) => n + 1);
+      if (probeMode) {
+        setProbe((p) => ({ ...p, detected: p.detected + 1 }));
+        beep();
+        busy.current = false;
+        setFps(Math.max(1, Math.round(1000 / Math.max(1, performance.now() - started))));
+        return;
+      }
+      beep();
       try {
         await api(`/matches/${matchId}/candidates`, {
           body: {
@@ -265,21 +361,35 @@ export function CameraPage({ matchId, onNavigate }: Props) {
             auto: autoDetect,
           },
         });
-        setLastHit({ label: dartLabel(field.ring, field.number), ring: field.ring, number: field.number, confidence, at: Date.now() });
-        setDetections((n) => n + 1);
+        setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Wurf konnte nicht übertragen werden');
+        // Offline oder Server weg: Wurf puffern und später nachschicken
+        enqueue({ ring: field.ring, number: field.number, confidence, auto: autoDetect });
+        setError(e instanceof Error ? `gepuffert (${e.message})` : 'Wurf gepuffert');
       } finally {
         busy.current = false;
+        setFps(Math.max(1, Math.round(1000 / Math.max(1, performance.now() - started))));
       }
     }, 420);
     return () => window.clearInterval(timer);
-  }, [calibrated, autoDetect, grabGray, matchId]);
+  }, [calibrated, autoDetect, grabGray, matchId, points, probeMode, beep, enqueue]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setDrawTick((n) => n + 1), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Gepufferte Würfe nachschicken, sobald die Verbindung wieder steht
+  useEffect(() => {
+    void flushQueue();
+    const timer = window.setInterval(() => void flushQueue(), 15000);
+    const online = () => void flushQueue();
+    window.addEventListener('online', online);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('online', online);
+    };
+  }, [flushQueue]);
 
   // Qualität regelmäßig prüfen und an den Server melden
   useEffect(() => {
@@ -503,6 +613,35 @@ export function CameraPage({ matchId, onNavigate }: Props) {
         <div className="flex items-center justify-between text-sm">
           <span className="text-[#a9b9d4]">Erkannte Würfe</span>
           <span className="font-bold tabular-nums">{detections}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#a9b9d4]">
+          <span className="chip">{fps} Bilder/s</span>
+          {queued > 0 && <span className="chip !text-[#ffcf6b]">{queued} gepuffert</span>}
+          {drift && <span className="chip !text-[#ffcf6b]">Kamera leicht verschoben — Punkte nachgezogen</span>}
+        </div>
+
+        <div className="rounded-xl bg-[#1b2b45] p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#a9b9d4]">Probelauf</p>
+              <p className="text-xs text-[#a9b9d4]">Würfe zählen, ohne sie zu buchen — zum Prüfen der Erkennung.</p>
+            </div>
+            <button
+              className={`btn !px-3 !py-2 text-xs ${probeMode ? 'btn-primary' : ''}`}
+              onClick={() => {
+                setProbeMode((v) => !v);
+                setProbe({ thrown: 0, detected: 0 });
+              }}
+            >
+              {probeMode ? 'läuft' : 'starten'}
+            </button>
+          </div>
+          {probeMode && (
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-[#a9b9d4]">erkannt</span>
+              <span className="font-bold">{probe.detected} Würfe</span>
+            </div>
+          )}
         </div>
         {lastHit && (
           <div className="rounded-xl bg-[#1b2b45] p-3">

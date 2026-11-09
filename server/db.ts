@@ -143,6 +143,31 @@ export async function initDb() {
     );
     create index if not exists candidates_match on dart_candidates(match_id, status);
 
+    create table if not exists tournaments (
+      id serial primary key,
+      created_by integer references users(id) on delete cascade,
+      name text not null default '',
+      status text not null default 'active',
+      winner_player_id integer,
+      created_at timestamptz not null default now()
+    );
+
+    create table if not exists tournament_slots (
+      id serial primary key,
+      tournament_id integer not null references tournaments(id) on delete cascade,
+      round integer not null,
+      slot integer not null,
+      player_id integer references players(id) on delete set null,
+      player_a_id integer references players(id) on delete set null,
+      player_b_id integer references players(id) on delete set null,
+      match_id integer references matches(id) on delete set null,
+      unique (tournament_id, round, slot)
+    );
+    alter table tournament_slots add column if not exists player_a_id integer references players(id) on delete set null;
+    alter table tournament_slots add column if not exists player_b_id integer references players(id) on delete set null;
+
+    alter table tournament_slots add column if not exists winner_player_id integer;
+
     create table if not exists training_sessions (
       id serial primary key,
       user_id integer references users(id) on delete cascade,

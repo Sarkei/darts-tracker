@@ -5,6 +5,7 @@ import type { AuthRequest } from './auth.js';
 import { loadMatchState, persistDerived, dartPoints, checkoutRoutes, type Ring } from './scoring.js';
 import { broadcast } from './events.js';
 import { matchRole, requireMatchAccess } from './access.js';
+import { syncTournamentForMatch } from './tournaments.js';
 
 export const matchesRouter = Router();
 
@@ -165,6 +166,10 @@ matchesRouter.post('/:id/darts', requireMatchAccess, async (req: AuthRequest, re
 
   const next = await loadMatchState(matchId);
   if (next) await persistDerived(matchId, next);
+  if (next?.finished) {
+    const winner = next.players.find((p) => p.matchPlayerId === next.match.winnerPlayerId);
+    await syncTournamentForMatch(matchId, winner?.playerId ?? null).catch(() => undefined);
+  }
   broadcast(matchId, 'dart', { matchId, matchPlayerId: current.matchPlayerId });
   res.json(next);
 });

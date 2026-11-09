@@ -7,6 +7,7 @@ import { playersRouter } from './players.js';
 import { matchesRouter, watchRouter } from './matches.js';
 import { statsRouter } from './stats.js';
 import { trainingRouter } from './training.js';
+import { tournamentsRouter } from './tournaments.js';
 import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
 import { devicesRouter } from './devices.js';
@@ -39,6 +40,7 @@ app.use('/api/matches', requireAuth, devicesRouter);
 app.use('/api/matches', requireAuth, matchesRouter);
 app.use('/api/stats', requireAuth, statsRouter);
 app.use('/api/training', requireAuth, trainingRouter);
+app.use('/api/tournaments', requireAuth, tournamentsRouter);
 app.use('/api/ai', requireAuth, aiRouter);
 
 const dist = path.resolve(process.cwd(), 'dist');
@@ -49,6 +51,14 @@ app.get('*', (req, res, next) => {
     return;
   }
   res.sendFile(path.join(dist, 'index.html'));
+});
+
+// Ein einzelner fehlgeschlagener Request darf nicht den ganzen Dienst beenden
+process.on('unhandledRejection', (reason) => {
+  console.error('unhandledRejection', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('uncaughtException', error);
 });
 
 const port = Number(process.env.PORT ?? 3000);

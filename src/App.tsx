@@ -15,6 +15,7 @@ import { ResetPage } from './pages/ResetPage';
 import { WatchPage } from './pages/WatchPage';
 import { RemotePage } from './pages/RemotePage';
 import { TrainingPage } from './pages/TrainingPage';
+import { TournamentPage } from './pages/TournamentPage';
 
 function currentRoute() {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -63,6 +64,7 @@ export default function App() {
     { to: '/history', label: 'Historie', icon: History },
     { to: '/stats', label: 'Statistik', icon: BarChart3 },
     { to: '/training', label: 'Training', icon: Target },
+    { to: '/tournament', label: 'Turnier', icon: Trophy },
     { to: '/ranking', label: 'Rangliste', icon: Trophy },
     { to: '/players', label: 'Spieler', icon: Users },
   ];
@@ -118,6 +120,7 @@ export default function App() {
         {route === '/history' && <HistoryPage onOpen={(id) => navigate(`/match/${id}`)} />}
         {route === '/stats' && <StatsPage />}
         {route === '/training' && <TrainingPage />}
+        {route === '/tournament' && <TournamentPage onOpenMatch={(id) => navigate(`/match/${id}`)} />}
         {route === '/ranking' && <RankingPage />}
         {route === '/players' && <PlayersPage />}
         {route === '/settings' && <SettingsPage />}

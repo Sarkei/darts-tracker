@@ -6,12 +6,21 @@ import type { AuthRequest } from './auth.js';
 export const playersRouter = Router();
 
 playersRouter.get('/', async (req: AuthRequest, res) => {
+  // Sichtbar: eigene Profile, Gäste und Spieler, mit denen man schon gespielt hat
   const rows = await query(
     `select p.id, p.name, p.avatar, p.is_guest, p.owner_id,
             (select count(*) from match_players mp where mp.player_id = p.id) as matches
        from players p
-      where p.owner_id is not null or p.is_guest = true
+      where p.owner_id = $1
+         or p.owner_id is null
+         or exists (
+              select 1 from match_players mine
+                join players own on own.id = mine.player_id
+                join match_players other on other.match_id = mine.match_id
+               where own.owner_id = $1 and other.player_id = p.id
+            )
       order by p.is_guest, lower(p.name)`,
+    [req.userId],
   );
   res.json({ players: rows.rows });
 });
