@@ -85,3 +85,25 @@ ein Dart das Bild verdunkelt und ein Schaft aufhellt). Die Prüfung läuft gegen
 
 Remote-Keypad, Trainingsmodi (Bob's 27, Around the Clock), Turnierbaum, Kamera-Feintuning mit
 eigenem Videomaterial.
+
+## Zugriff, Rollen und Teilen
+
+- **Ein Match gehört seinen Spielern.** Lesen, Werfen, Korrigieren, Geräte und Vorschläge sind nur
+  für Ersteller und beteiligte Spieler möglich (`server/access.ts`, 403 für alle anderen). Die Liste
+  zeigt nur eigene Matches.
+- **Zuschauer ohne Konto:** jedes Match hat einen sechsstelligen **Zuschauer-Code**
+  (`/#/watch/CODE`), der nur den Spielstand liefert — kein Login, keine Schreibrechte.
+- **Fernbedienung:** `/#/match/:id/remote` ist ein schlankes Zahlenfeld für ein zweites Gerät.
+- **Rollen:** Beim ersten Betreten fragt die App „Kamera / Dashboard / Zuschauer"; gewechselt wird
+  jederzeit, es gibt pro Match genau eine Kamera.
+- **Konto:** Passwort vergessen → Link (eine Stunde gültig, einmalig, entwertet alte Sitzungen).
+  Ohne SMTP zeigt die App den Link direkt an (`ALLOW_DEV_RESET_LINK=1`).
+- **Registrierung schließen:** `INVITE_CODE` in der `.env` setzen — dann ist die Anmeldung nur mit
+  Code möglich. Login/Registrierung/Reset sind zusätzlich rate-limitiert.
+
+## Als App aufs Handy
+
+Manifest, Icons und Service Worker liegen unter `public/`. Im Browser „Zum Startbildschirm
+hinzufügen" → eigenes Fenster ohne Adressleiste. Die App-Hülle kommt aus dem Cache, Spielstände
+immer live aus dem Netz; beim Kamera-Betrieb bleibt der Bildschirm über die Wake-Lock-API an.
+
