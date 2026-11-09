@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Plus, Play, UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
 import type { MatchState, Player } from '../lib/types';
+import { Avatar } from '../components/Avatar';
 
 export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void }) {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -78,7 +79,7 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
                   }`}
                 >
                   <span className="truncate">
-                    <span className="mr-2">{p.avatar}</span>
+                    <span className="mr-2"><Avatar value={p.avatar} /></span>
                     {p.name}
                   </span>
                   {on && <Check className="h-4 w-4 text-[var(--color-accent)]" />}

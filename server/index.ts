@@ -4,7 +4,7 @@ import path from 'node:path';
 import { initDb, query } from './db.js';
 import { authRouter, requireAuth } from './auth.js';
 import { playersRouter } from './players.js';
-import { matchesRouter } from './matches.js';
+import { matchesRouter, watchRouter } from './matches.js';
 import { statsRouter } from './stats.js';
 import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
@@ -32,6 +32,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/events', eventsRouter);
 
+app.use('/api/watch', watchRouter);
 app.use('/api/players', requireAuth, playersRouter);
 app.use('/api/matches', requireAuth, devicesRouter);
 app.use('/api/matches', requireAuth, matchesRouter);

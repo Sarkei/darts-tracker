@@ -1,5 +1,6 @@
 import { Router, type Response } from 'express';
 import { readToken } from './auth.js';
+import { matchRole } from './access.js';
 
 interface Client {
   res: Response;
@@ -19,6 +20,13 @@ eventsRouter.get('/', async (req, res) => {
     return;
   }
   const matchId = Number(req.query.matchId ?? 0) || null;
+  if (matchId) {
+    const role = await matchRole(matchId, parsed.userId);
+    if (!role) {
+      res.status(403).json({ error: 'forbidden' });
+      return;
+    }
+  }
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

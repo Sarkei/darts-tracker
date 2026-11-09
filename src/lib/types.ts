@@ -67,6 +67,7 @@ export interface MatchState {
     mode: string;
     status: string;
     winnerPlayerId: number | null;
+    shareCode?: string | null;
   };
   players: PlayerState[];
   currentMatchPlayerId: number | null;

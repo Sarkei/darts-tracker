@@ -4,6 +4,7 @@ import { query } from './db.js';
 import type { AuthRequest } from './auth.js';
 import { loadMatchState, persistDerived, dartPoints, checkoutRoutes, type Ring } from './scoring.js';
 import { broadcast } from './events.js';
+import { matchRole, requireMatchAccess } from './access.js';
 
 export const matchesRouter = Router();
 
@@ -24,7 +25,7 @@ matchesRouter.get('/', async (req: AuthRequest, res) => {
   const limit = Math.min(100, Number(req.query.limit ?? 30) || 30);
   const rows = await query(
     `select m.id, m.name, m.start_score, m.double_in, m.double_out, m.best_of, m.mode, m.status,
-            m.created_at, m.finished_at, m.winner_player_id,
+            m.created_at, m.finished_at, m.winner_player_id, m.share_code,
             coalesce(
               (select json_agg(json_build_object('playerId', p.id, 'name', p.name, 'avatar', p.avatar) order by mp.position)
                  from match_players mp join players p on p.id = mp.player_id where mp.match_id = m.id),
@@ -33,8 +34,15 @@ matchesRouter.get('/', async (req: AuthRequest, res) => {
             (select count(*) from legs l where l.match_id = m.id) as legs_played
        from matches m
       where ($1::text is null or m.status = $1)
+        and (
+          m.created_by = $3
+          or exists (
+            select 1 from match_players mp join players p on p.id = mp.player_id
+             where mp.match_id = m.id and p.owner_id = $3
+          )
+        )
       order by m.id desc limit $2`,
-    [status, limit],
+    [status, limit, req.userId],
   );
   res.json({ matches: rows.rows });
 });
@@ -57,8 +65,8 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
     return;
   }
   const created = await query<{ id: number }>(
-    `insert into matches (created_by, name, start_score, double_in, double_out, best_of, mode)
-     values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+    `insert into matches (created_by, name, start_score, double_in, double_out, best_of, mode, share_code)
+     values ($1,$2,$3,$4,$5,$6,$7, upper(substr(md5(random()::text), 1, 6))) returning id`,
     [req.userId, name ?? '', startScore, doubleIn, doubleOut, bestOf, mode],
   );
   const matchId = created.rows[0].id;
@@ -70,7 +78,7 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
   res.status(201).json(state);
 });
 
-matchesRouter.get('/:id', async (req: AuthRequest, res) => {
+matchesRouter.get('/:id', requireMatchAccess, async (req: AuthRequest, res) => {
   const id = Number(req.params.id);
   const state = await loadMatchState(id);
   if (!state) {
@@ -95,7 +103,7 @@ function openVisit(state: NonNullable<Awaited<ReturnType<typeof loadMatchState>>
   return last.id;
 }
 
-matchesRouter.post('/:id/darts', async (req: AuthRequest, res) => {
+matchesRouter.post('/:id/darts', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const schema = z.object({
     ring: z.enum(['single', 'double', 'triple', 'bull', 'bullseye']),
@@ -155,7 +163,7 @@ matchesRouter.post('/:id/darts', async (req: AuthRequest, res) => {
   res.json(next);
 });
 
-matchesRouter.post('/:id/visits/end', async (req: AuthRequest, res) => {
+matchesRouter.post('/:id/visits/end', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const state = await loadMatchState(matchId);
   if (!state || state.finished) {
@@ -182,7 +190,7 @@ matchesRouter.post('/:id/visits/end', async (req: AuthRequest, res) => {
   res.json(next);
 });
 
-matchesRouter.delete('/:id/darts/last', async (req: AuthRequest, res) => {
+matchesRouter.delete('/:id/darts/last', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const last = await query<{ id: number; visit_id: number }>(
     `select d.id, d.visit_id from darts d where d.match_id = $1 order by d.id desc limit 1`,
@@ -203,7 +211,7 @@ matchesRouter.delete('/:id/darts/last', async (req: AuthRequest, res) => {
   res.json(next);
 });
 
-matchesRouter.patch('/:id/darts/:dartId', async (req: AuthRequest, res) => {
+matchesRouter.patch('/:id/darts/:dartId', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const dartId = Number(req.params.dartId);
   const schema = z.object({ ring: z.enum(['single', 'double', 'triple', 'bull', 'bullseye']), number: z.number().int().min(0).max(20) });
@@ -227,11 +235,33 @@ matchesRouter.patch('/:id/darts/:dartId', async (req: AuthRequest, res) => {
   res.json(next);
 });
 
-matchesRouter.post('/:id/abandon', async (req: AuthRequest, res) => {
+matchesRouter.post('/:id/abandon', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   await query("update matches set status = 'abandoned', finished_at = now() where id = $1 and status = 'active'", [matchId]);
   broadcast(matchId, 'match', { action: 'abandoned' });
   res.json({ ok: true });
+});
+
+/** Zuschauer ohne Konto: Code aus der App, liefert nur den Spielstand. */
+export const watchRouter = Router();
+
+watchRouter.get('/:code', async (req, res) => {
+  const code = String(req.params.code ?? '').toUpperCase().trim();
+  if (!/^[A-Z0-9]{4,10}$/.test(code)) {
+    res.status(400).json({ error: 'invalid-code' });
+    return;
+  }
+  const found = await query<{ id: number }>('select id from matches where upper(share_code) = $1', [code]);
+  if (!found.rowCount) {
+    res.status(404).json({ error: 'not-found', message: 'Kein Match mit diesem Code.' });
+    return;
+  }
+  const state = await loadMatchState(found.rows[0].id);
+  if (!state) {
+    res.status(404).json({ error: 'not-found' });
+    return;
+  }
+  res.json({ ...state, live: true });
 });
 
 matchesRouter.get('/:id/checkout', async (req: AuthRequest, res) => {

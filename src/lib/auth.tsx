@@ -7,7 +7,7 @@ interface AuthState {
   player: Player | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string, inviteCode?: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -54,8 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(data.token);
         await refresh();
       },
-      async register(email, password, displayName) {
-        const data = await api<{ token: string; user: User }>('/auth/register', { body: { email, password, displayName } });
+      async register(email, password, displayName, inviteCode) {
+        const data = await api<{ token: string; user: User }>('/auth/register', {
+          body: { email, password, displayName, inviteCode },
+        });
         setToken(data.token);
         await refresh();
       },

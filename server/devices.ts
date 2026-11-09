@@ -4,6 +4,7 @@ import { query } from './db.js';
 import type { AuthRequest } from './auth.js';
 import { loadMatchState, persistDerived, dartPoints } from './scoring.js';
 import { broadcast } from './events.js';
+import { requireMatchAccess } from './access.js';
 
 export const devicesRouter = Router();
 
@@ -18,7 +19,7 @@ async function listDevices(matchId: number) {
   return rows.rows;
 }
 
-devicesRouter.get('/:id/devices', async (req: AuthRequest, res) => {
+devicesRouter.get('/:id/devices', requireMatchAccess, async (req: AuthRequest, res) => {
   res.json({ devices: await listDevices(Number(req.params.id)) });
 });
 
@@ -26,7 +27,7 @@ devicesRouter.get('/:id/devices', async (req: AuthRequest, res) => {
  * Gerät anmelden oder Rolle wechseln. Es gibt pro Match genau **eine** Kamera:
  * beansprucht ein Gerät die Rolle, wird jedes andere Kamera-Gerät auf „dashboard" zurückgestuft.
  */
-devicesRouter.post('/:id/devices', async (req: AuthRequest, res) => {
+devicesRouter.post('/:id/devices', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const parsed = z
     .object({ deviceId: z.string().min(4).max(80), role: roleSchema, name: z.string().max(60).default('') })
@@ -57,7 +58,7 @@ devicesRouter.post('/:id/devices', async (req: AuthRequest, res) => {
   res.json({ devices });
 });
 
-devicesRouter.delete('/:id/devices/:deviceId', async (req: AuthRequest, res) => {
+devicesRouter.delete('/:id/devices/:deviceId', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   await query('delete from match_devices where match_id = $1 and device_id = $2', [matchId, req.params.deviceId]);
   const devices = await listDevices(matchId);
@@ -66,7 +67,7 @@ devicesRouter.delete('/:id/devices/:deviceId', async (req: AuthRequest, res) => 
 });
 
 /** Lebenszeichen + Kamerastatus (Qualität, Meldung). Wird vom Kamera-Gerät regelmäßig gesendet. */
-devicesRouter.post('/:id/devices/:deviceId/status', async (req: AuthRequest, res) => {
+devicesRouter.post('/:id/devices/:deviceId/status', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const parsed = z
     .object({
@@ -90,7 +91,7 @@ devicesRouter.post('/:id/devices/:deviceId/status', async (req: AuthRequest, res
 });
 
 /** Wurf, den die Kamera erkannt hat: sicher → direkt eintragen, unsicher → als Vorschlag ablegen. */
-devicesRouter.post('/:id/candidates', async (req: AuthRequest, res) => {
+devicesRouter.post('/:id/candidates', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const parsed = z
     .object({
@@ -154,7 +155,7 @@ devicesRouter.post('/:id/candidates', async (req: AuthRequest, res) => {
   res.status(201).json({ mode: 'pending', id: created.rows[0].id });
 });
 
-devicesRouter.get('/:id/candidates', async (req: AuthRequest, res) => {
+devicesRouter.get('/:id/candidates', requireMatchAccess, async (req: AuthRequest, res) => {
   const rows = await query(
     `select id, ring, number, confidence, created_at as "createdAt"
        from dart_candidates where match_id = $1 and status = 'pending' order by id`,
@@ -164,7 +165,7 @@ devicesRouter.get('/:id/candidates', async (req: AuthRequest, res) => {
 });
 
 /** Vorschlag übernehmen, verwerfen oder korrigiert eintragen. */
-devicesRouter.post('/:id/candidates/:candidateId', async (req: AuthRequest, res) => {
+devicesRouter.post('/:id/candidates/:candidateId', requireMatchAccess, async (req: AuthRequest, res) => {
   const matchId = Number(req.params.id);
   const candidateId = Number(req.params.candidateId);
   const parsed = z

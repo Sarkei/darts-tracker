@@ -49,8 +49,11 @@ export async function initDb() {
       status text not null default 'active',
       winner_player_id integer,
       created_at timestamptz not null default now(),
-      finished_at timestamptz
+      finished_at timestamptz,
+      share_code text
     );
+    alter table matches add column if not exists share_code text;
+    create unique index if not exists matches_share_code on matches(share_code) where share_code is not null;
 
     create table if not exists match_players (
       id serial primary key,
@@ -113,6 +116,16 @@ export async function initDb() {
     );
     alter table match_devices add column if not exists status jsonb not null default '{}'::jsonb;
 
+    create table if not exists password_reset_tokens (
+      id serial primary key,
+      user_id integer not null references users(id) on delete cascade,
+      token_hash text not null,
+      expires_at timestamptz not null,
+      used_at timestamptz,
+      created_at timestamptz not null default now()
+    );
+    create index if not exists reset_tokens_hash on password_reset_tokens(token_hash);
+
     create table if not exists dart_candidates (
       id serial primary key,
       match_id integer not null references matches(id) on delete cascade,
@@ -135,6 +148,12 @@ export async function initDb() {
       created_at timestamptz not null default now()
     );
   `);
+
+  // Bestehende Matches ohne Zuschauer-Code nachrüsten
+  await query(
+    `update matches set share_code = upper(substr(md5(random()::text || id::text), 1, 6))
+      where share_code is null`,
+  );
 }
 
 export async function logAiRun(userId: number | null, kind: string, ok: boolean, ms: number, error?: string) {

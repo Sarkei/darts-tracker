@@ -58,7 +58,7 @@ export interface VisitView {
 }
 
 export interface MatchState {
-  match: MatchConfig & { name: string; mode: string; winnerPlayerId: number | null };
+  match: MatchConfig & { name: string; mode: string; winnerPlayerId: number | null; shareCode?: string | null };
   players: PlayerState[];
   currentMatchPlayerId: number | null;
   currentLegIndex: number;
@@ -384,7 +384,8 @@ export async function loadMatchState(matchId: number): Promise<MatchState | null
     mode: string;
     status: string;
     winner_player_id: number | null;
-  }>('select id, name, start_score, double_in, double_out, best_of, mode, status, winner_player_id from matches where id = $1', [matchId]);
+    share_code: string | null;
+  }>('select id, name, start_score, double_in, double_out, best_of, mode, status, winner_player_id, share_code from matches where id = $1', [matchId]);
   if (!m.rowCount) return null;
   const match = m.rows[0];
 
@@ -416,6 +417,7 @@ export async function loadMatchState(matchId: number): Promise<MatchState | null
       doubleOut: match.double_out,
       bestOf: match.best_of,
       winnerPlayerId: match.winner_player_id,
+      shareCode: match.share_code,
     },
     pl.rows.map((r) => ({
       matchPlayerId: r.id,

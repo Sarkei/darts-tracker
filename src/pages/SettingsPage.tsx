@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { Avatar } from '../components/Avatar';
 import { useAuth } from '../lib/auth';
 
-const AVATARS = ['🎯', '🎪', '🔥', '🦅', '🐺', '⚡', '🍀', '🎱', '🏆', '🧊'];
+const AVATARS = ['🎯', '🔥', '⚡', '🏆', '🦅', '🐺', '🍀', '🎱', '🧊', '🎪'];
 
 export function SettingsPage() {
   const { user, refresh } = useAuth();
@@ -55,11 +56,11 @@ export function SettingsPage() {
             <button
               key={a}
               onClick={() => setAvatar(a)}
-              className={`grid h-10 w-10 place-items-center rounded-xl border text-lg ${
+              className={`grid h-10 w-10 place-items-center rounded-xl border ${
                 avatar === a ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'
               }`}
             >
-              {a}
+              <Avatar value={a} className="h-5 w-5" />
             </button>
           ))}
         </div>

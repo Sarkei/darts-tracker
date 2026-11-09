@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 import { query } from './db.js';
 
@@ -54,16 +55,52 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
 
 export const authRouter = Router();
 
+/**
+ * Einfaches Rate-Limit im Speicher: bremst Passwort-Raten und Registrierungs-Spam.
+ * Absichtlich grob — es soll den öffentlichen Endpunkt unattraktiv machen, keine Statistik führen.
+ */
+const attempts = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimit(bucket: string, limit: number, windowMs: number) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = `${bucket}:${req.ip ?? 'unknown'}`;
+    const now = Date.now();
+    const entry = attempts.get(key);
+    if (!entry || entry.resetAt < now) {
+      attempts.set(key, { count: 1, resetAt: now + windowMs });
+      next();
+      return;
+    }
+    entry.count += 1;
+    if (entry.count > limit) {
+      res.status(429).json({ error: 'too-many-requests', message: 'Zu viele Versuche — bitte kurz warten.' });
+      return;
+    }
+    next();
+  };
+}
+
+const INVITE_CODE = (process.env.INVITE_CODE ?? '').trim();
+
+authRouter.get('/config', (_req, res) => {
+  res.json({ inviteRequired: Boolean(INVITE_CODE), passwordResetEnabled: true });
+});
+
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Mindestens 8 Zeichen'),
   displayName: z.string().min(1).max(40),
+  inviteCode: z.string().max(64).optional(),
 });
 
-authRouter.post('/register', async (req, res) => {
+authRouter.post('/register', rateLimit('register', 8, 10 * 60_000), async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'invalid-input', details: parsed.error.flatten() });
+    return;
+  }
+  if (INVITE_CODE && (parsed.data.inviteCode ?? '').trim() !== INVITE_CODE) {
+    res.status(403).json({ error: 'invite-required', message: 'Einladungscode fehlt oder ist falsch.' });
     return;
   }
   const email = parsed.data.email.toLowerCase().trim();
@@ -88,7 +125,7 @@ authRouter.post('/register', async (req, res) => {
   res.status(201).json({ token: signToken(user), user: { id: user.id, email: user.email, displayName: user.display_name, avatar: user.avatar } });
 });
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', rateLimit('login', 12, 5 * 60_000), async (req, res) => {
   const body = req.body as { email?: string; password?: string };
   if (!body.email || !body.password) {
     res.status(400).json({ error: 'invalid-input' });
@@ -148,6 +185,60 @@ authRouter.patch('/me', requireAuth, async (req: AuthRequest, res) => {
   if (avatar) {
     await query('update players set avatar = $2 where owner_id = $1', [req.userId, avatar]);
   }
+  res.json({ ok: true });
+});
+
+/**
+ * Passwort vergessen. Antwortet immer gleich, damit die Route nicht verrät, ob es das Konto gibt.
+ * Ohne SMTP wird der Link in der Antwort mitgegeben (ALLOW_DEV_RESET_LINK=1).
+ */
+authRouter.post('/forgot-password', rateLimit('forgot', 6, 10 * 60_000), async (req, res) => {
+  const parsed = z.object({ email: z.string().email() }).safeParse(req.body);
+  const devLink = process.env.ALLOW_DEV_RESET_LINK === '1';
+  if (!parsed.success) {
+    res.json({ ok: true, ...(devLink ? { resetPath: null } : {}) });
+    return;
+  }
+  const email = parsed.data.email.toLowerCase().trim();
+  const found = await query<{ id: number }>('select id from users where email = $1', [email]);
+  let resetPath: string | null = null;
+  if (found.rowCount) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+    await query(
+      "insert into password_reset_tokens (user_id, token_hash, expires_at) values ($1,$2, now() + interval '60 minutes')",
+      [found.rows[0].id, hash],
+    );
+    resetPath = `/#/reset?token=${token}`;
+  }
+  res.json({ ok: true, ...(devLink ? { resetPath } : {}) });
+});
+
+/** Neues Passwort setzen. Token ist einmalig, alte Sitzungen werden über token_version entwertet. */
+authRouter.post('/reset-password', rateLimit('reset', 10, 10 * 60_000), async (req, res) => {
+  const parsed = z
+    .object({ token: z.string().min(20).max(200), password: z.string().min(8, 'Mindestens 8 Zeichen') })
+    .safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'invalid-input' });
+    return;
+  }
+  const hash = crypto.createHash('sha256').update(parsed.data.token).digest('hex');
+  const found = await query<{ id: number; user_id: number }>(
+    `select id, user_id from password_reset_tokens
+      where token_hash = $1 and used_at is null and expires_at > now()`,
+    [hash],
+  );
+  if (!found.rowCount) {
+    res.status(400).json({ error: 'token-invalid', message: 'Der Link ist abgelaufen oder schon benutzt.' });
+    return;
+  }
+  const newHash = await bcrypt.hash(parsed.data.password, 10);
+  await query('update users set password_hash = $2, token_version = token_version + 1 where id = $1', [
+    found.rows[0].user_id,
+    newHash,
+  ]);
+  await query('update password_reset_tokens set used_at = now() where id = $1', [found.rows[0].id]);
   res.json({ ok: true });
 });
 

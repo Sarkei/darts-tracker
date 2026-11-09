@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Trash2, UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Player } from '../lib/types';
+import { Avatar } from '../components/Avatar';
 
 export function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -68,7 +69,7 @@ export function PlayersPage() {
           <div key={p.id} className="card flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
               <p className="truncate font-bold">
-                {p.avatar} {p.name}
+                <Avatar value={p.avatar} /> {p.name}
               </p>
               <p className="text-xs text-[var(--color-muted)]">
                 {p.is_guest ? 'Gast' : 'Konto'} · {p.matches ?? 0} Matches

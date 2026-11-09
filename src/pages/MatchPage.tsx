@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Bot, Camera, Check, MonitorSmartphone, RotateCcw, Sparkles, Target, UserX, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Bot, Camera, Check, Copy, MonitorSmartphone, RotateCcw, Sparkles, Target, UserX, Volume2, VolumeX, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { dartLabel, type MatchState, type Ring } from '../lib/types';
 import { useMatchEvents } from '../lib/useMatchEvents';
+import { useWakeLock } from '../lib/useWakeLock';
+import { Avatar } from '../components/Avatar';
 
 interface Props {
   matchId: number;
@@ -56,7 +58,12 @@ export function MatchPage({ matchId, onNavigate }: Props) {
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [sound, setSound] = useState(() => localStorage.getItem('darts.sound') !== '0');
+  const [copied, setCopied] = useState(false);
+  const [hasRole, setHasRole] = useState(true);
   const me = useMemo(() => myDeviceId(), []);
+  const spokenVisit = useRef<number | null>(null);
+  useWakeLock(!state?.finished);
 
   const load = useCallback(async () => {
     try {
@@ -75,11 +82,8 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       ]);
       setDevices(d.devices);
       setCandidates(c.candidates);
-      // Dieses Gerät meldet sich als Dashboard an, solange es nicht selbst die Kamera ist.
-      const mine = d.devices.find((x) => x.deviceId === me);
-      if (!mine) {
-        await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'dashboard', name: 'Dashboard' } });
-      }
+      // Rolle nicht mehr stillschweigend setzen — das Gerät fragt beim ersten Mal.
+      setHasRole(Boolean(d.devices.find((x) => x.deviceId === me)));
     } catch {
       /* Geräte sind optional */
     }
@@ -129,6 +133,55 @@ export function MatchPage({ matchId, onNavigate }: Props) {
 
   const cameraDevice = devices.find((d) => d.role === 'camera') ?? null;
 
+  // Ansage: 180er und Checkouts einmal pro Zug
+  useEffect(() => {
+    if (!sound || !state?.lastVisit) return;
+    const visit = state.lastVisit;
+    if (spokenVisit.current === visit.id) return;
+    if (visit.darts.length < 3 && !visit.checkout) return;
+    spokenVisit.current = visit.id;
+    const text = visit.checkout
+      ? 'Checkout'
+      : visit.score === 180
+        ? 'Einhundertachtzig'
+        : visit.bust
+          ? 'Bust'
+          : null;
+    if (text && 'speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'de-DE';
+      utter.rate = 1.05;
+      window.speechSynthesis.speak(utter);
+    }
+    if (navigator.vibrate && (visit.checkout || visit.score === 180)) navigator.vibrate(60);
+  }, [state?.lastVisit, sound]);
+
+  // Tastatur am PC: 1–9 Zahl, S/D/T Ring, Backspace Undo, Leertaste Zug beenden
+  useEffect(() => {
+    if (state?.finished) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key === 's') setRing('single');
+      else if (key === 'd') setRing('double');
+      else if (key === 't') setRing('triple');
+      else if (key === 'backspace') {
+        e.preventDefault();
+        void act(() => api(`/matches/${matchId}/darts/last`, { method: 'DELETE' }));
+      } else if (key === ' ' || key === 'escape') {
+        e.preventDefault();
+        void act(() => api(`/matches/${matchId}/visits/end`, { method: 'POST' }));
+      } else if (/^[1-9]$/.test(key)) {
+        void throwDart(ring, Number(key));
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [ring, state?.finished, matchId]);
+
   if (!state) {
     return <div className="py-16 text-center text-[var(--color-muted)]">lade Match …</div>;
   }
@@ -164,11 +217,45 @@ export function MatchPage({ matchId, onNavigate }: Props) {
               key={p.matchPlayerId}
               className={`chip ${p.matchPlayerId === state.currentMatchPlayerId ? 'chip-on' : ''}`}
             >
-              {p.avatar} {p.name} · {p.legsWon}
+              <Avatar value={p.avatar} /> {p.name} · {p.legsWon}
             </span>
           ))}
         </div>
       </div>
+
+      {!hasRole && (
+        <div className="card border-[#3ee383] p-4">
+          <p className="label">Wie soll dieses Gerät mitmachen?</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <button
+              className="btn"
+              onClick={() => onNavigate(`/match/${matchId}/camera`)}
+            >
+              <Camera className="h-4 w-4" /> Kamera (filmt das Board)
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'dashboard', name: 'Dashboard' } });
+                setHasRole(true);
+                await loadSide();
+              }}
+            >
+              <MonitorSmartphone className="h-4 w-4" /> Dashboard (Anzeige + Eingabe)
+            </button>
+            <button
+              className="btn"
+              onClick={async () => {
+                await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'viewer', name: 'Zuschauer' } });
+                setHasRole(true);
+                await loadSide();
+              }}
+            >
+              Nur zusehen
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card flex flex-wrap items-center justify-between gap-2 p-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -211,6 +298,40 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             Als Dashboard
           </button>
         </div>
+      </div>
+
+      <div className="card flex flex-wrap items-center justify-between gap-2 p-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[#a9b9d4]">Zuschauer-Code</span>
+          <span className="rounded-lg bg-[#1b2b45] px-2 py-1 font-mono text-sm font-bold tracking-widest">
+            {state.match.shareCode ?? '—'}
+          </span>
+          <button
+            className="btn !px-2 !py-1 text-xs"
+            onClick={async () => {
+              const url = `${window.location.origin}/#/watch/${state.match.shareCode}`;
+              await navigator.clipboard?.writeText(url).catch(() => undefined);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1500);
+            }}
+          >
+            <Copy className="h-3.5 w-3.5" /> {copied ? 'kopiert' : 'Link kopieren'}
+          </button>
+          <button className="btn !px-2 !py-1 text-xs" onClick={() => onNavigate(`/match/${matchId}/remote`)}>
+            Fernbedienung
+          </button>
+        </div>
+        <button
+          className="btn !px-2 !py-1 text-xs"
+          onClick={() => {
+            const next = !sound;
+            setSound(next);
+            localStorage.setItem('darts.sound', next ? '1' : '0');
+          }}
+        >
+          {sound ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          {sound ? 'Ansage an' : 'Ansage aus'}
+        </button>
       </div>
 
       {candidates.length > 0 && (
@@ -393,7 +514,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             return (
               <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg px-1 py-1 text-sm odd:bg-white/[0.03]">
                 <span className="flex min-w-0 items-center gap-2">
-                  <span>{p?.avatar}</span>
+                  <span><Avatar value={p?.avatar} /></span>
                   <span className="truncate text-[var(--color-muted)]">{p?.name}</span>
                 </span>
                 <span className="flex items-center gap-1 font-mono text-xs text-[var(--color-muted)]">
@@ -419,7 +540,11 @@ export function MatchPage({ matchId, onNavigate }: Props) {
 
       <button
         className="btn w-full !border-transparent !bg-transparent text-xs text-[var(--color-muted)]"
-        onClick={() => act(() => api(`/matches/${matchId}/abandon`, { method: 'POST' }))}
+        onClick={() => {
+          if (window.confirm('Match wirklich abbrechen? Der Spielstand bleibt in der Historie.')) {
+            void act(() => api(`/matches/${matchId}/abandon`, { method: 'POST' }));
+          }
+        }}
       >
         <Target className="h-3 w-3" /> Match abbrechen
       </button>

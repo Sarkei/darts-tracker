@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import type { MatchSummary } from '../lib/types';
+import { Avatar } from '../components/Avatar';
 
 export function HistoryPage({ onOpen }: { onOpen: (id: number) => void }) {
   const [matches, setMatches] = useState<MatchSummary[]>([]);
@@ -44,7 +45,7 @@ export function HistoryPage({ onOpen }: { onOpen: (id: number) => void }) {
             >
               <div className="min-w-0">
                 <p className="truncate font-bold">
-                  {m.players.map((p) => `${p.avatar} ${p.name}`).join(' vs ')}
+                  {m.players.map((p) => `$<Avatar value={p.avatar} /> ${p.name}`).join(' vs ')}
                 </p>
                 <p className="mt-0.5 text-xs text-[var(--color-muted)]">
                   {new Date(m.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: '2-digit' })} ·{' '}

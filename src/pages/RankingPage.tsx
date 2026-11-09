@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Crown, TrendingUp } from 'lucide-react';
 import { api } from '../lib/api';
 import type { RankingEntry } from '../lib/types';
+import { Avatar } from '../components/Avatar';
 
 export function RankingPage() {
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
@@ -32,7 +33,7 @@ export function RankingPage() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold">
-                {entry.avatar} {entry.name}
+                <Avatar value={entry.avatar} /> {entry.name}
               </p>
               <p className="text-xs text-[var(--color-muted)]">
                 {entry.wins}S / {entry.losses}N · Ø {entry.average} · Doppel {entry.doubleQuote}%

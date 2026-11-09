@@ -11,6 +11,9 @@ import { StatsPage } from './pages/StatsPage';
 import { RankingPage } from './pages/RankingPage';
 import { PlayersPage } from './pages/PlayersPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ResetPage } from './pages/ResetPage';
+import { WatchPage } from './pages/WatchPage';
+import { RemotePage } from './pages/RemotePage';
 
 function currentRoute() {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -26,6 +29,14 @@ export default function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Öffentliche Wege ohne Anmeldung
+  if (route.startsWith('/watch/')) {
+    return <WatchPage code={route.split('/')[2] ?? ''} />;
+  }
+  if (route.startsWith('/reset')) {
+    return <ResetPage onNavigate={(to) => { window.location.hash = to; }} />;
+  }
 
   if (loading) {
     return (
@@ -43,6 +54,7 @@ export default function App() {
 
   const matchDetail = route.match(/^\/match\/(\d+)$/);
   const cameraDetail = route.match(/^\/match\/(\d+)\/camera$/);
+  const remoteDetail = route.match(/^\/match\/(\d+)\/remote$/);
   const isMatch = Boolean(matchDetail);
 
   const nav = [
@@ -100,6 +112,7 @@ export default function App() {
         {route === '/new' && <NewMatchPage onCreated={(id) => navigate(`/match/${id}`)} />}
         {isMatch && <MatchPage matchId={Number(matchDetail![1])} onNavigate={navigate} />}
         {cameraDetail && <CameraPage matchId={Number(cameraDetail[1])} onNavigate={navigate} />}
+        {remoteDetail && <RemotePage matchId={Number(remoteDetail[1])} onNavigate={navigate} />}
         {route === '/history' && <HistoryPage onOpen={(id) => navigate(`/match/${id}`)} />}
         {route === '/stats' && <StatsPage />}
         {route === '/ranking' && <RankingPage />}

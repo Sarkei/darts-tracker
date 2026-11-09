@@ -5,6 +5,7 @@ import { dartLabel, type Ring } from '../lib/types';
 import { BOARD_MM, pointToField } from '../lib/vision/geometry';
 import { applyMatrix, homographyFrom4, type Matrix3, type Point } from '../lib/vision/homography';
 import { downscale, findBoardCircle, imageDataToGray, sharpness, changeBlobs, type GrayImage } from '../lib/vision/detect';
+import { useWakeLock } from '../lib/useWakeLock';
 
 interface Props {
   matchId: number;
@@ -44,6 +45,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
   const lastHitAt = useRef(0);
   const busy = useRef(false);
   const me = useRef(deviceId());
+  useWakeLock(true);
 
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
