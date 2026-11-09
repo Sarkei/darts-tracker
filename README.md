@@ -107,3 +107,30 @@ Manifest, Icons und Service Worker liegen unter `public/`. Im Browser „Zum Sta
 hinzufügen" → eigenes Fenster ohne Adressleiste. Die App-Hülle kommt aus dem Cache, Spielstände
 immer live aus dem Netz; beim Kamera-Betrieb bleibt der Bildschirm über die Wake-Lock-API an.
 
+
+## Spielformate
+
+- **Legs:** „First to X" — wer zuerst X Legs hat, gewinnt (`bestOf`).
+- **Sätze:** Legs pro Satz (`bestOf`) plus Best of Sätze (`bestOfSets`). Ein Satzgewinn setzt die
+  Legs aller Spieler zurück; das Match endet beim erreichten Satzziel.
+- **Anwurf:** „Sieger wirft an" (Standard) oder „abwechselnd"; die Startposition im ersten Leg ist
+  wählbar. In der Kopfzeile steht bei Sätzen `x S / y L`.
+- **Bogey-Zahlen** (159, 162, 163, 165, 166, 168, 169) zeigen einen Hinweis, auf welchen Rest man
+  stattdessen spielen sollte.
+
+## Training
+
+Vier Übungen unter „Training", Ergebnisse landen in `training_sessions` und fließen in die Statistik:
+
+- **Doppel-Training** — D1…D20, drei Darts je Doppel, zählt Treffer.
+- **Bob's 27** — Start 27, Treffer addieren den Doppelwert, drei Fehlwürfe ziehen ihn ab, unter 0 ist Schluss.
+- **Around the Clock** — 1…20 und Bull der Reihe nach, zählt die Darts.
+- **Checkout-Training** — zufällige Restscores 41–170, festhalten wie viele Darts nötig waren.
+
+## Statistik
+
+- **3-Dart-Average** aus Punkten **pro Dart** × 3 (Züge können vorzeitig enden).
+- **Doppel-Quote**: Anteil der Darts, die bei Rest ≤ 50 (also auf ein Doppel) geworfen wurden und trafen.
+- **Checkout-Quote**: erfolgreiche Checkouts geteilt durch Züge, die mit Rest ≤ 170 begannen.
+- **Verlauf** pro Kalenderwoche, **H2H**-Bilanz gegen jeden Gegner, Elo-Rangliste.
+
