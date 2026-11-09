@@ -5,6 +5,7 @@ import { AuthPage } from './pages/AuthPage';
 import { HomePage } from './pages/HomePage';
 import { NewMatchPage } from './pages/NewMatchPage';
 import { MatchPage } from './pages/MatchPage';
+import { CameraPage } from './pages/CameraPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { StatsPage } from './pages/StatsPage';
 import { RankingPage } from './pages/RankingPage';
@@ -41,6 +42,7 @@ export default function App() {
   };
 
   const matchDetail = route.match(/^\/match\/(\d+)$/);
+  const cameraDetail = route.match(/^\/match\/(\d+)\/camera$/);
   const isMatch = Boolean(matchDetail);
 
   const nav = [
@@ -97,6 +99,7 @@ export default function App() {
         {route === '/' && <HomePage onNavigate={navigate} />}
         {route === '/new' && <NewMatchPage onCreated={(id) => navigate(`/match/${id}`)} />}
         {isMatch && <MatchPage matchId={Number(matchDetail![1])} onNavigate={navigate} />}
+        {cameraDetail && <CameraPage matchId={Number(cameraDetail[1])} onNavigate={navigate} />}
         {route === '/history' && <HistoryPage onOpen={(id) => navigate(`/match/${id}`)} />}
         {route === '/stats' && <StatsPage />}
         {route === '/ranking' && <RankingPage />}

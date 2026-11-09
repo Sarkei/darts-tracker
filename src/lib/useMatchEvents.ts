@@ -9,7 +9,7 @@ export function useMatchEvents(matchId: number | null, onChange: () => void) {
     if (!token) return;
     const source = new EventSource(`/api/events?matchId=${matchId}&token=${encodeURIComponent(token)}`);
     const handler = () => onChange();
-    for (const type of ['dart', 'visit', 'match']) source.addEventListener(type, handler);
+    for (const type of ['dart', 'visit', 'match', 'candidate', 'role', 'camera']) source.addEventListener(type, handler);
     source.onerror = () => {
       // EventSource verbindet sich selbst neu; nichts zu tun.
     };

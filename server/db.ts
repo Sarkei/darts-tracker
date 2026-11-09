@@ -107,9 +107,23 @@ export async function initDb() {
       device_id text not null,
       role text not null default 'dashboard',
       name text not null default '',
+      status jsonb not null default '{}'::jsonb,
       last_seen timestamptz not null default now(),
       unique (match_id, device_id)
     );
+    alter table match_devices add column if not exists status jsonb not null default '{}'::jsonb;
+
+    create table if not exists dart_candidates (
+      id serial primary key,
+      match_id integer not null references matches(id) on delete cascade,
+      device_id text not null default '',
+      ring text not null,
+      number integer not null,
+      confidence real not null default 0,
+      status text not null default 'pending',
+      created_at timestamptz not null default now()
+    );
+    create index if not exists candidates_match on dart_candidates(match_id, status);
 
     create table if not exists ai_runs (
       id serial primary key,

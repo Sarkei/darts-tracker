@@ -8,6 +8,7 @@ import { matchesRouter } from './matches.js';
 import { statsRouter } from './stats.js';
 import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
+import { devicesRouter } from './devices.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -32,6 +33,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/events', eventsRouter);
 
 app.use('/api/players', requireAuth, playersRouter);
+app.use('/api/matches', requireAuth, devicesRouter);
 app.use('/api/matches', requireAuth, matchesRouter);
 app.use('/api/stats', requireAuth, statsRouter);
 app.use('/api/ai', requireAuth, aiRouter);

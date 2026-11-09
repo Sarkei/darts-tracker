@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Bot, RotateCcw, Sparkles, Target, UserX } from 'lucide-react';
+import { ArrowLeft, Bot, Camera, Check, MonitorSmartphone, RotateCcw, Sparkles, Target, UserX, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { dartLabel, type MatchState, type Ring } from '../lib/types';
 import { useMatchEvents } from '../lib/useMatchEvents';
@@ -22,6 +22,31 @@ interface AiSummary {
   tips: string[];
 }
 
+interface DeviceRow {
+  deviceId: string;
+  role: 'camera' | 'dashboard' | 'viewer';
+  name: string;
+  status: { quality?: 'good' | 'ok' | 'bad'; message?: string; calibrated?: boolean };
+  lastSeen: string;
+}
+
+interface Candidate {
+  id: number;
+  ring: Ring;
+  number: number;
+  confidence: number;
+  createdAt: string;
+}
+
+function myDeviceId() {
+  let id = localStorage.getItem('darts.deviceId');
+  if (!id) {
+    id = 'dev-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    localStorage.setItem('darts.deviceId', id);
+  }
+  return id;
+}
+
 export function MatchPage({ matchId, onNavigate }: Props) {
   const [state, setState] = useState<MatchState | null>(null);
   const [ring, setRing] = useState<Ring>('single');
@@ -29,6 +54,9 @@ export function MatchPage({ matchId, onNavigate }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<AiSummary | null>(null);
   const [summaryBusy, setSummaryBusy] = useState(false);
+  const [devices, setDevices] = useState<DeviceRow[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const me = useMemo(() => myDeviceId(), []);
 
   const load = useCallback(async () => {
     try {
@@ -39,11 +67,33 @@ export function MatchPage({ matchId, onNavigate }: Props) {
     }
   }, [matchId]);
 
+  const loadSide = useCallback(async () => {
+    try {
+      const [d, c] = await Promise.all([
+        api<{ devices: DeviceRow[] }>(`/matches/${matchId}/devices`),
+        api<{ candidates: Candidate[] }>(`/matches/${matchId}/candidates`),
+      ]);
+      setDevices(d.devices);
+      setCandidates(c.candidates);
+      // Dieses Gerät meldet sich als Dashboard an, solange es nicht selbst die Kamera ist.
+      const mine = d.devices.find((x) => x.deviceId === me);
+      if (!mine) {
+        await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'dashboard', name: 'Dashboard' } });
+      }
+    } catch {
+      /* Geräte sind optional */
+    }
+  }, [matchId, me]);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadSide();
+  }, [load, loadSide]);
 
-  useMatchEvents(matchId, load);
+  useMatchEvents(matchId, useCallback(() => {
+    void load();
+    void loadSide();
+  }, [load, loadSide]));
 
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -70,6 +120,14 @@ export function MatchPage({ matchId, onNavigate }: Props) {
     if (!state) return [];
     return [...state.visits].reverse().slice(0, 12);
   }, [state]);
+
+  const lastCompletedVisit = useMemo(() => {
+    if (!state) return null;
+    const done = state.visits.filter((v) => v.bust || v.checkout || v.darts.length === 3);
+    return done.length ? done[done.length - 1] : null;
+  }, [state]);
+
+  const cameraDevice = devices.find((d) => d.role === 'camera') ?? null;
 
   if (!state) {
     return <div className="py-16 text-center text-[var(--color-muted)]">lade Match …</div>;
@@ -111,6 +169,94 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           ))}
         </div>
       </div>
+
+      <div className="card flex flex-wrap items-center justify-between gap-2 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip">
+            <MonitorSmartphone className="h-3.5 w-3.5" />
+            {devices.find((d) => d.deviceId === me)?.role === 'camera' ? 'Dieses Gerät: Kamera' : 'Dieses Gerät: Dashboard'}
+          </span>
+          {cameraDevice ? (
+            <span
+              className={`chip ${
+                cameraDevice.status?.quality === 'good'
+                  ? 'chip-on'
+                  : cameraDevice.status?.quality === 'bad'
+                    ? '!border-[#ff7a86] !text-[#ff9aa3]'
+                    : ''
+              }`}
+              title={cameraDevice.status?.message ?? ''}
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Kamera {cameraDevice.status?.quality === 'good' ? 'gut' : cameraDevice.status?.quality === 'ok' ? 'okay' : 'unklar'}
+            </span>
+          ) : (
+            <span className="chip">Keine Kamera verbunden</span>
+          )}
+          {cameraDevice?.status?.message && (
+            <span className="text-xs text-[#a9b9d4]">{cameraDevice.status.message}</span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button className="btn !px-3 !py-2 text-xs" onClick={() => onNavigate(`/match/${matchId}/camera`)}>
+            <Camera className="h-3.5 w-3.5" /> Kamera auf diesem Gerät
+          </button>
+          <button
+            className="btn !px-3 !py-2 text-xs"
+            onClick={async () => {
+              await api(`/matches/${matchId}/devices`, { body: { deviceId: me, role: 'dashboard', name: 'Dashboard' } });
+              await loadSide();
+            }}
+          >
+            Als Dashboard
+          </button>
+        </div>
+      </div>
+
+      {candidates.length > 0 && (
+        <div className="card border-[#ffcf6b] p-4">
+          <p className="label !mb-2">Kamera-Vorschläge ({candidates.length})</p>
+          <div className="space-y-2">
+            {candidates.map((c) => (
+              <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#1b2b45] p-2">
+                <span className="font-bold">{dartLabel(c.ring, c.number)}</span>
+                <span className="text-xs text-[#a9b9d4]">{Math.round(c.confidence * 100)} % sicher</span>
+                <div className="flex gap-1">
+                  <button
+                    className="btn btn-primary !px-2 !py-1 text-xs"
+                    onClick={() => act(() => api(`/matches/${matchId}/candidates/${c.id}`, { body: { action: 'approve' } }))}
+                  >
+                    <Check className="h-3.5 w-3.5" /> übernehmen
+                  </button>
+                  <button
+                    className="btn !px-2 !py-1 text-xs"
+                    onClick={() => act(() => api(`/matches/${matchId}/candidates/${c.id}`, { body: { action: 'reject' } }))}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {lastCompletedVisit && !state.finished && (
+        <div className="card flex items-center justify-between gap-3 p-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[#a9b9d4]">Letzte Runde</p>
+            <p className="text-sm font-bold">
+              {playerById(lastCompletedVisit.matchPlayerId)?.name}
+            </p>
+          </div>
+          <p className="font-mono text-xs text-[#a9b9d4]">
+            {lastCompletedVisit.darts.map((d) => dartLabel(d.ring, d.number)).join(' ')}
+          </p>
+          <p className={`text-2xl font-extrabold tabular-nums ${lastCompletedVisit.bust ? 'text-[#ff7a86]' : ''}`}>
+            {lastCompletedVisit.bust ? 'Bust' : lastCompletedVisit.score}
+          </p>
+        </div>
+      )}
 
       {state.finished && (
         <div className="card border-[var(--color-accent)] p-4">
