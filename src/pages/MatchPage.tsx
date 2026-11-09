@@ -72,7 +72,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
   }, [state]);
 
   if (!state) {
-    return <div className="py-16 text-center text-[--color-muted]">lade Match …</div>;
+    return <div className="py-16 text-center text-[var(--color-muted)]">lade Match …</div>;
   }
 
   const playerById = (matchPlayerId: number) => state.players.find((p) => p.matchPlayerId === matchPlayerId);
@@ -113,9 +113,9 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       </div>
 
       {state.finished && (
-        <div className="card border-[--color-accent] p-4">
-          <p className="text-xs uppercase tracking-widest text-[--color-muted]">Match beendet</p>
-          <p className="mt-1 text-2xl font-extrabold text-[--color-accent]">
+        <div className="card border-[var(--color-accent)] p-4">
+          <p className="text-xs uppercase tracking-widest text-[var(--color-muted)]">Match beendet</p>
+          <p className="mt-1 text-2xl font-extrabold text-[var(--color-accent)]">
             {state.players.find((p) => p.matchPlayerId === state.match.winnerPlayerId)?.name} gewinnt
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -131,20 +131,20 @@ export function MatchPage({ matchId, onNavigate }: Props) {
 
       {summary && (
         <div className="card space-y-2 p-4">
-          <p className="flex items-center gap-2 text-sm font-bold text-[--color-accent]">
+          <p className="flex items-center gap-2 text-sm font-bold text-[var(--color-accent)]">
             <Bot className="h-4 w-4" /> {summary.headline}
           </p>
-          <p className="text-sm text-[--color-ink]/85">{summary.summary}</p>
+          <p className="text-sm text-[#cfdaf0]">{summary.summary}</p>
           {summary.highlights.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-sm text-[--color-muted]">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-muted)]">
               {summary.highlights.map((h) => (
                 <li key={h}>{h}</li>
               ))}
             </ul>
           )}
           {summary.tips.length > 0 && (
-            <div className="rounded-xl bg-[--color-accent-soft] p-3 text-sm">
-              <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[--color-accent]">Tipps</p>
+            <div className="rounded-xl bg-[var(--color-accent-soft)] p-3 text-sm">
+              <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[var(--color-accent)]">Tipps</p>
               <ul className="list-disc space-y-1 pl-5">
                 {summary.tips.map((t) => (
                   <li key={t}>{t}</li>
@@ -157,28 +157,28 @@ export function MatchPage({ matchId, onNavigate }: Props) {
 
       {active && !state.finished && (
         <div className="card p-5 text-center">
-          <div className="flex items-center justify-center gap-2 text-sm text-[--color-muted]">
+          <div className="flex items-center justify-center gap-2 text-sm text-[var(--color-muted)]">
             <span className="text-xl">{active.avatar}</span>
             <span className="font-bold uppercase tracking-widest">{active.name} ist dran</span>
           </div>
           <p className="mt-1 text-[clamp(3.5rem,18vw,7rem)] font-black leading-none tabular-nums">
             {active.remaining}
           </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-[--color-muted]">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--color-muted)]">
             <span className="chip">Leg {state.currentLegIndex}</span>
             <span className="chip">
               Darts in diesem Zug: {dartsInVisit}/3
             </span>
-            {state.match.doubleIn && !active.entered && <span className="chip !text-[--color-warn]">Double-In offen</span>}
+            {state.match.doubleIn && !active.entered && <span className="chip !text-[var(--color-warn)]">Double-In offen</span>}
             {state.match.doubleOut && <span className="chip">Double-Out</span>}
           </div>
 
           {route && (
-            <div className="mt-4 rounded-2xl border border-[--color-accent]/40 bg-[--color-accent-soft]/60 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[--color-accent]">Checkout</p>
+            <div className="mt-4 rounded-2xl border border-[#2c8f56] bg-[#0d3521] p-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent)]">Checkout</p>
               <p className="mt-1 text-2xl font-extrabold tracking-wide">{route.label}</p>
               {alternatives.length > 0 && (
-                <p className="mt-1 text-xs text-[--color-muted]">
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
                   Alternativen: {alternatives.map((a) => a.label).join(' · ')}
                 </p>
               )}
@@ -248,9 +248,9 @@ export function MatchPage({ matchId, onNavigate }: Props) {
               <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg px-1 py-1 text-sm odd:bg-white/[0.03]">
                 <span className="flex min-w-0 items-center gap-2">
                   <span>{p?.avatar}</span>
-                  <span className="truncate text-[--color-muted]">{p?.name}</span>
+                  <span className="truncate text-[var(--color-muted)]">{p?.name}</span>
                 </span>
-                <span className="flex items-center gap-1 font-mono text-xs text-[--color-muted]">
+                <span className="flex items-center gap-1 font-mono text-xs text-[var(--color-muted)]">
                   {v.darts.map((d) => (
                     <span key={d.id} className="rounded bg-white/5 px-1.5 py-0.5">
                       {dartLabel(d.ring, d.number)}
@@ -259,7 +259,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
                 </span>
                 <span
                   className={`w-16 text-right font-bold tabular-nums ${
-                    v.checkout ? 'text-[--color-accent]' : v.bust ? 'text-[--color-danger]' : ''
+                    v.checkout ? 'text-[var(--color-accent)]' : v.bust ? 'text-[var(--color-danger)]' : ''
                   }`}
                 >
                   {v.bust ? 'Bust' : v.score}
@@ -267,12 +267,12 @@ export function MatchPage({ matchId, onNavigate }: Props) {
               </div>
             );
           })}
-          {recentVisits.length === 0 && <p className="text-sm text-[--color-muted]">Noch keine Würfe.</p>}
+          {recentVisits.length === 0 && <p className="text-sm text-[var(--color-muted)]">Noch keine Würfe.</p>}
         </div>
       </div>
 
       <button
-        className="btn w-full !border-transparent !bg-transparent text-xs text-[--color-muted]"
+        className="btn w-full !border-transparent !bg-transparent text-xs text-[var(--color-muted)]"
         onClick={() => act(() => api(`/matches/${matchId}/abandon`, { method: 'POST' }))}
       >
         <Target className="h-3 w-3" /> Match abbrechen

@@ -74,14 +74,14 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
                   key={p.id}
                   onClick={() => toggle(p.id)}
                   className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-left ${
-                    on ? 'border-[--color-accent] bg-[--color-accent-soft]' : 'border-[--color-line] bg-white/[0.02]'
+                    on ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)] bg-white/[0.02]'
                   }`}
                 >
                   <span className="truncate">
                     <span className="mr-2">{p.avatar}</span>
                     {p.name}
                   </span>
-                  {on && <Check className="h-4 w-4 text-[--color-accent]" />}
+                  {on && <Check className="h-4 w-4 text-[var(--color-accent)]" />}
                 </button>
               );
             })}
@@ -166,7 +166,7 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
             </button>
           </div>
           {mode === 'auto' && (
-            <p className="mt-2 rounded-lg bg-white/5 p-3 text-xs text-[--color-muted]">
+            <p className="mt-2 rounded-lg bg-white/5 p-3 text-xs text-[var(--color-muted)]">
               Kamera-Tracking ist vorbereitet: Nach dem Start wählst du pro Gerät die Rolle „Kamera" oder „Dashboard".
               Bis die Erkennung aktiv ist, kannst du jederzeit manuell eintragen — beides landet im selben Spiel.
             </p>
@@ -178,7 +178,7 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
         <button className="btn btn-primary w-full" disabled={busy || selected.length < 2} onClick={start}>
           {busy ? 'starte …' : <><Play className="h-4 w-4" /> Match starten</>}
         </button>
-        {selected.length < 2 && <p className="text-center text-xs text-[--color-muted]">Mindestens zwei Spieler wählen.</p>}
+        {selected.length < 2 && <p className="text-center text-xs text-[var(--color-muted)]">Mindestens zwei Spieler wählen.</p>}
       </section>
 
       <button

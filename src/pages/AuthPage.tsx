@@ -36,22 +36,24 @@ export function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="card w-full max-w-sm p-6">
         <div className="mb-5 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[--color-accent] text-xl text-[#04160c]">🎯</span>
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-accent)] text-[#04160c]">
+            <Target className="h-6 w-6" strokeWidth={2.4} />
+          </span>
           <div>
             <h1 className="text-xl font-extrabold">Darts Tracker</h1>
-            <p className="text-xs text-[--color-muted]">Matches, Statistiken, Checkouts</p>
+            <p className="text-xs text-[var(--color-muted)]">Matches, Statistiken, Checkouts</p>
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[--color-line] p-1">
+        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[var(--color-line)] p-1">
           <button
-            className={`rounded-lg py-2 text-sm font-bold ${mode === 'login' ? 'bg-[--color-accent] text-[#04160c]' : 'text-[--color-muted]'}`}
+            className={`rounded-lg py-2 text-sm font-bold ${mode === 'login' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
             onClick={() => setMode('login')}
           >
             Anmelden
           </button>
           <button
-            className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[--color-accent] text-[#04160c]' : 'text-[--color-muted]'}`}
+            className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
             onClick={() => setMode('register')}
           >
             Registrieren

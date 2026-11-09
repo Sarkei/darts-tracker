@@ -44,7 +44,7 @@ export function PlayersPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-extrabold">Spieler</h1>
-        <p className="text-sm text-[--color-muted]">Profile für Rangliste und Statistik. Gäste brauchen kein Konto.</p>
+        <p className="text-sm text-[var(--color-muted)]">Profile für Rangliste und Statistik. Gäste brauchen kein Konto.</p>
       </div>
 
       <div className="card space-y-3 p-4">
@@ -70,7 +70,7 @@ export function PlayersPage() {
               <p className="truncate font-bold">
                 {p.avatar} {p.name}
               </p>
-              <p className="text-xs text-[--color-muted]">
+              <p className="text-xs text-[var(--color-muted)]">
                 {p.is_guest ? 'Gast' : 'Konto'} · {p.matches ?? 0} Matches
               </p>
             </div>

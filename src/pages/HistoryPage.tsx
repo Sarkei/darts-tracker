@@ -46,19 +46,19 @@ export function HistoryPage({ onOpen }: { onOpen: (id: number) => void }) {
                 <p className="truncate font-bold">
                   {m.players.map((p) => `${p.avatar} ${p.name}`).join(' vs ')}
                 </p>
-                <p className="mt-0.5 text-xs text-[--color-muted]">
+                <p className="mt-0.5 text-xs text-[var(--color-muted)]">
                   {new Date(m.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: '2-digit' })} ·{' '}
                   {m.start_score} · Bo{m.best_of} · {m.legs_played} Legs
                   {m.status === 'active' && ' · läuft'}
                   {winner && ` · Sieger: ${winner.name}`}
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-[--color-muted]" />
+              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--color-muted)]" />
             </button>
           );
         })}
         {shown.length === 0 && (
-          <div className="card p-6 text-center text-sm text-[--color-muted]">Noch keine Matches gespeichert.</div>
+          <div className="card p-6 text-center text-sm text-[var(--color-muted)]">Noch keine Matches gespeichert.</div>
         )}
       </div>
     </div>

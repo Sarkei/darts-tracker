@@ -28,7 +28,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-[--color-muted]">
+      <div className="flex min-h-screen items-center justify-center text-[var(--color-muted)]">
         <Target className="mr-2 h-5 w-5 animate-pulse" /> lade …
       </div>
     );
@@ -55,7 +55,7 @@ export default function App() {
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-24 pt-4 md:pb-8">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <button className="flex shrink-0 items-center gap-2" onClick={() => navigate('/')}>
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[--color-accent] text-[#04160c]">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-[#04160c]">
             <Target className="h-5 w-5" />
           </span>
           <span className="text-lg font-extrabold tracking-tight">Darts</span>
@@ -70,7 +70,7 @@ export default function App() {
                 key={item.to}
                 onClick={() => navigate(item.to)}
                 className={`btn !border-transparent !bg-transparent !px-3 !py-2 text-sm ${
-                  active ? '!text-[--color-accent]' : '!text-[--color-muted]'
+                  active ? '!text-[var(--color-accent)]' : '!text-[var(--color-muted)]'
                 }`}
               >
                 <Icon className="h-4 w-4" /> {item.label}
@@ -104,7 +104,7 @@ export default function App() {
         {route === '/settings' && <SettingsPage />}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-[--color-line] bg-[#080f1c]/95 px-2 py-2 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-[var(--color-line)] bg-[#080f1c]/95 px-2 py-2 backdrop-blur md:hidden">
         {nav.map((item) => {
           const Icon = item.icon;
           const active = route === item.to;
@@ -113,7 +113,7 @@ export default function App() {
               key={item.to}
               onClick={() => navigate(item.to)}
               className={`flex flex-col items-center gap-1 px-3 py-1 text-[11px] font-semibold ${
-                active ? 'text-[--color-accent]' : 'text-[--color-muted]'
+                active ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)]'
               }`}
             >
               <Icon className="h-5 w-5" />

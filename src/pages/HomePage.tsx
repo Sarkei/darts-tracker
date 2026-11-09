@@ -27,20 +27,20 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
   return (
     <div className="space-y-4">
       <section className="card p-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-[--color-muted]">Willkommen zurück</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">Willkommen zurück</p>
         <h1 className="mt-1 text-2xl font-extrabold">{user?.displayName}</h1>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-white/[0.04] p-3">
+          <div className="rounded-xl bg-[#1b2b45] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.average ?? 0}</p>
-            <p className="text-[11px] uppercase tracking-widest text-[--color-muted]">Average</p>
+            <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">Average</p>
           </div>
-          <div className="rounded-xl bg-white/[0.04] p-3">
+          <div className="rounded-xl bg-[#1b2b45] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.checkoutQuote ?? 0}%</p>
-            <p className="text-[11px] uppercase tracking-widest text-[--color-muted]">Checkout</p>
+            <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">Checkout</p>
           </div>
-          <div className="rounded-xl bg-white/[0.04] p-3">
+          <div className="rounded-xl bg-[#1b2b45] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.count180 ?? 0}</p>
-            <p className="text-[11px] uppercase tracking-widest text-[--color-muted]">180er</p>
+            <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">180er</p>
           </div>
         </div>
         <div className="mt-4 flex gap-2">
@@ -54,7 +54,7 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-[--color-muted]">Laufende Matches</h2>
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-[var(--color-muted)]">Laufende Matches</h2>
         <div className="space-y-2">
           {matches.map((m) => (
             <button
@@ -66,16 +66,16 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
                 <p className="truncate font-bold">
                   {m.players.map((p) => p.name).join(' vs ')}
                 </p>
-                <p className="text-xs text-[--color-muted]">
+                <p className="text-xs text-[var(--color-muted)]">
                   {m.start_score} · Best of {m.best_of} · {m.double_in ? 'Double-In · ' : ''}
                   {m.double_out ? 'Double-Out' : 'Straight-Out'}
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 shrink-0 text-[--color-muted]" />
+              <ChevronRight className="h-5 w-5 shrink-0 text-[var(--color-muted)]" />
             </button>
           ))}
           {matches.length === 0 && (
-            <div className="card p-6 text-center text-sm text-[--color-muted]">
+            <div className="card p-6 text-center text-sm text-[var(--color-muted)]">
               Kein laufendes Match. Starte eins mit „Neues Match".
             </div>
           )}

@@ -56,7 +56,7 @@ export function SettingsPage() {
               key={a}
               onClick={() => setAvatar(a)}
               className={`grid h-10 w-10 place-items-center rounded-xl border text-lg ${
-                avatar === a ? 'border-[--color-accent] bg-[--color-accent-soft]' : 'border-[--color-line]'
+                avatar === a ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)]'
               }`}
             >
               {a}
@@ -87,19 +87,19 @@ export function SettingsPage() {
         <button className="btn" onClick={changePassword} disabled={!currentPassword || newPassword.length < 8}>
           Passwort ändern
         </button>
-        {pwMessage && <p className="text-sm text-[--color-muted]">{pwMessage}</p>}
+        {pwMessage && <p className="text-sm text-[var(--color-muted)]">{pwMessage}</p>}
       </section>
 
       <section className="card p-4">
         <p className="label">KI</p>
-        <p className="text-sm text-[--color-muted]">
+        <p className="text-sm text-[var(--color-muted)]">
           {ai?.enabled
             ? `DeepSeek aktiv (${ai.model}) — Spielanalyse und Trainingspläne laufen über deinen API-Key.`
             : 'Kein API-Key hinterlegt. Analysen sind deaktiviert.'}
         </p>
       </section>
 
-      <section className="card p-4 text-sm text-[--color-muted]">
+      <section className="card p-4 text-sm text-[var(--color-muted)]">
         <p className="label">Über</p>
         <p>Darts Tracker · manuelles Scoring, Checkout-Vorschläge, Statistik, Rangliste.</p>
         <p className="mt-1">Kamera-Tracking und Live-Dashboard folgen in der nächsten Ausbaustufe.</p>

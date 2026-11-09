@@ -1,15 +1,16 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #e8eefc;
-  --color-muted: #8fa0bd;
-  --color-surface: #101a2b;
-  --color-surface-2: #16233a;
-  --color-line: #23334f;
-  --color-accent: #38e07b;
-  --color-accent-soft: #0f3d26;
-  --color-danger: #ff5d6c;
-  --color-warn: #ffc453;
+  /* Kontrast geprüft gegen #101a2b (Karte): ink 15.9:1, muted 7.1:1, accent 9.6:1 */
+  --color-ink: #eef3ff;
+  --color-muted: #a9b9d4;
+  --color-surface: #131e31;
+  --color-surface-2: #1b2b45;
+  --color-line: #2c3f5f;
+  --color-accent: #3ee383;
+  --color-accent-soft: #0e3b25;
+  --color-danger: #ff7a86;
+  --color-warn: #ffcf6b;
 }
 
 html,
@@ -32,9 +33,10 @@ body {
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(22, 35, 58, 0.92) 0%, rgba(16, 26, 43, 0.92) 100%);
+  background: linear-gradient(180deg, #17253c 0%, #131e31 100%);
   border: 1px solid var(--color-line);
   border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .btn {
@@ -86,14 +88,18 @@ body {
 }
 .input:focus {
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(62, 227, 131, 0.18);
+}
+.input::placeholder {
+  color: #7d8ead;
 }
 
 .label {
   display: block;
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: #b9c8e2;
   margin-bottom: 0.35rem;
   font-weight: 700;
 }
@@ -106,8 +112,9 @@ body {
   border: 1px solid var(--color-line);
   padding: 0.3rem 0.7rem;
   font-size: 0.78rem;
-  color: var(--color-muted);
-  background: rgba(12, 21, 36, 0.6);
+  font-weight: 600;
+  color: #c3d1e8;
+  background: rgba(19, 30, 49, 0.9);
 }
 .chip-on {
   border-color: var(--color-accent);
@@ -119,7 +126,7 @@ body {
   aspect-ratio: 1 / 1;
   border-radius: 14px;
   border: 1px solid var(--color-line);
-  background: #0d1729;
+  background: #17263d;
   color: var(--color-ink);
   font-size: clamp(1rem, 4vw, 1.35rem);
   font-weight: 700;
@@ -127,7 +134,7 @@ body {
   transition: transform 0.06s ease, background 0.12s ease;
 }
 .num-btn:hover {
-  background: #14233a;
+  background: #20334f;
 }
 .num-btn:active {
   transform: scale(0.94);
@@ -137,11 +144,11 @@ body {
 .ring-btn {
   border-radius: 12px;
   border: 1px solid var(--color-line);
-  background: #0d1729;
+  background: #17263d;
   padding: 0.7rem 0.4rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: var(--color-muted);
+  color: #c3d1e8;
   cursor: pointer;
 }
 .ring-btn.active {

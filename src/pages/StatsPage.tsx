@@ -102,7 +102,7 @@ export function StatsPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-extrabold">Statistik</h1>
-          <p className="text-sm text-[--color-muted]">Trefferverteilung, Quoten und Averages.</p>
+          <p className="text-sm text-[var(--color-muted)]">Trefferverteilung, Quoten und Averages.</p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -143,7 +143,7 @@ export function StatsPage() {
       </div>
 
       {!stats || stats.darts === 0 ? (
-        <div className="card p-6 text-center text-sm text-[--color-muted]">
+        <div className="card p-6 text-center text-sm text-[var(--color-muted)]">
           Noch keine Würfe im Zeitraum — spiele ein Match, dann füllt sich die Statistik.
         </div>
       ) : (
@@ -161,7 +161,7 @@ export function StatsPage() {
             ].map((metric) => (
               <div key={metric.label} className="card p-3 text-center">
                 <p className="text-xl font-extrabold tabular-nums">{metric.value}</p>
-                <p className="text-[11px] uppercase tracking-widest text-[--color-muted]">{metric.label}</p>
+                <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">{metric.label}</p>
               </div>
             ))}
           </div>
@@ -210,7 +210,7 @@ export function StatsPage() {
                   );
                 })}
               </svg>
-              <p className="mt-2 text-center text-xs text-[--color-muted]">
+              <p className="mt-2 text-center text-xs text-[var(--color-muted)]">
                 Je dunkler grün, desto häufiger landete ein Dart dort ({stats.darts} Darts gesamt).
               </p>
             </div>
@@ -224,11 +224,11 @@ export function StatsPage() {
                   <span className="w-12 font-mono font-bold">{field}</span>
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
                     <div
-                      className="h-full rounded-full bg-[--color-accent]"
+                      className="h-full rounded-full bg-[var(--color-accent)]"
                       style={{ width: `${Math.round((count / maxField) * 100)}%` }}
                     />
                   </div>
-                  <span className="w-12 text-right tabular-nums text-[--color-muted]">{count}</span>
+                  <span className="w-12 text-right tabular-nums text-[var(--color-muted)]">{count}</span>
                 </div>
               ))}
             </div>
@@ -255,12 +255,12 @@ export function StatsPage() {
                   <div key={step.title} className="rounded-xl bg-white/[0.04] p-3">
                     <p className="flex items-center justify-between text-sm font-bold">
                       {step.title}
-                      <span className="text-xs text-[--color-muted]">{step.minutes} Min</span>
+                      <span className="text-xs text-[var(--color-muted)]">{step.minutes} Min</span>
                     </p>
-                    <p className="mt-1 text-sm text-[--color-muted]">{step.description}</p>
+                    <p className="mt-1 text-sm text-[var(--color-muted)]">{step.description}</p>
                   </div>
                 ))}
-                <p className="flex items-center gap-2 text-sm text-[--color-accent]">
+                <p className="flex items-center gap-2 text-sm text-[var(--color-accent)]">
                   <Bot className="h-4 w-4" /> {plan.encouragement}
                 </p>
               </div>
