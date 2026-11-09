@@ -10,7 +10,8 @@
     "build:all": "npm run build && npm run build:server",
     "start": "node server.js",
     "lint": "tsc --noEmit",
-    "test:checkout": "tsx scripts/checkout-selftest.ts"
+    "test:checkout": "tsx scripts/checkout-selftest.ts",
+    "test:vision": "tsx scripts/vision-selftest.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
