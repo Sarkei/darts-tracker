@@ -134,3 +134,19 @@ Vier Übungen unter „Training", Ergebnisse landen in `training_sessions` und f
 - **Checkout-Quote**: erfolgreiche Checkouts geteilt durch Züge, die mit Rest ≤ 170 begannen.
 - **Verlauf** pro Kalenderwoche, **H2H**-Bilanz gegen jeden Gegner, Elo-Rangliste.
 
+
+## Turnier
+
+K.-o.-Baum für 2 bis 8 Spieler. Freie Plätze werden aufgefüllt und ziehen automatisch weiter; jedes
+Paar bekommt ein eigenes Match (501, Double-Out, First to 2 Legs), das im Turnier verlinkt ist.
+Sobald ein Match endet, rückt der Sieger in die nächste Runde, das Finale entsteht von selbst.
+
+## Kamera im Alltag
+
+- Nachkalibrierung: alle ~6 s wird geprüft, ob das Board noch an derselben Stelle ist; Punkte werden
+  still nachgezogen, im Status erscheint „Kamera leicht verschoben".
+- **Probelauf**: zählt erkannte Würfe, ohne sie zu buchen — zum Prüfen vor dem Spiel.
+- **Offline-Puffer**: Würfe, die den Server nicht erreichen, landen lokal und gehen alle 15 s bzw.
+  beim Wiederverbinden raus.
+- Ton bei jedem erkannten Wurf, Anzeige der Bilder pro Sekunde.
+
