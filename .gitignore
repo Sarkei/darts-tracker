@@ -1,0 +1,9 @@
+node_modules/
+dist/
+server.js
+.env
+.env.local
+*.log
+.DS_Store
+tmp/
+test-results/

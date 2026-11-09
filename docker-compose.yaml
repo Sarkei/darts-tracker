@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: darts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: darts
+      POSTGRES_USER: darts
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD in .env setzen}
+    volumes:
+      - darts_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U darts -d darts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    image: darts-tracker:latest
+    container_name: darts-tracker
+    restart: unless-stopped
+    ports:
+      - "22227:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: darts
+      POSTGRES_USER: darts
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_URL: postgres://darts:${POSTGRES_PASSWORD}@db:5432/darts
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET in .env setzen}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/chat/completions}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - cloudflare
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  darts_pg:
+
+networks:
+  default:
+    driver: bridge
+  cloudflare:
+    external: true
+    name: cloudflare-tunnel-net
