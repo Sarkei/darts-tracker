@@ -113,6 +113,7 @@ function accumulate(agg: PlayerAggregate, state: MatchState, playerId: number, m
       weekStats.attempts += 1;
     }
     if (before <= 50) agg.doubleDarts += visit.darts.length;
+    const lowDoubleAttempt = before <= 50;
 
     agg.visits += 1;
     weekStats.visits += 1;
@@ -138,7 +139,7 @@ function accumulate(agg: PlayerAggregate, state: MatchState, playerId: number, m
       const key = fieldKey(dart.ring, dart.number);
       agg.fields[key] = (agg.fields[key] ?? 0) + 1;
       agg.numbers[String(dart.number)] = (agg.numbers[String(dart.number)] ?? 0) + 1;
-      if (dart.ring === 'double' || dart.ring === 'bullseye') {
+      if (lowDoubleAttempt && (dart.ring === 'double' || dart.ring === 'bullseye')) {
         agg.doubleHits += 1;
         agg.doubleAttempts += 1;
       }

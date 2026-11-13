@@ -261,3 +261,31 @@ authRouter.post('/password', requireAuth, async (req: AuthRequest, res) => {
   );
   res.json({ ok: true, token: signToken({ id: req.userId!, email: req.userEmail!, token_version: updated.rows[0].token_version }) });
 });
+
+
+/** Demo-Zugang für Portfolio/Demo-Domain: meldet ausschließlich das Demo-Konto an. */
+const DEMO_EMAIL = (process.env.DEMO_EMAIL ?? 'demo@example.com').trim().toLowerCase();
+
+async function handleDemo(_req: Request, res: Response) {
+  try {
+    const row = await query<{ id: number; email: string; display_name: string; avatar: string; token_version: number }>(
+      'select id, email, display_name, avatar, token_version from users where lower(email) = $1 limit 1',
+      [DEMO_EMAIL],
+    );
+    if (!row.rowCount) {
+      res.status(404).json({ error: 'demo-unavailable', message: 'Demo ist nicht eingerichtet.' });
+      return;
+    }
+    const u = row.rows[0];
+    res.json({
+      token: signToken(u),
+      user: { id: u.id, email: u.email, displayName: u.display_name, avatar: u.avatar },
+    });
+  } catch (e) {
+    console.error('[auth/demo]', e);
+    res.status(500).json({ error: 'demo-failed' });
+  }
+}
+
+authRouter.get('/demo', handleDemo);
+authRouter.post('/demo', handleDemo);

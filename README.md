@@ -100,6 +100,10 @@ eigenem Videomaterial.
   Ohne SMTP zeigt die App den Link direkt an (`ALLOW_DEV_RESET_LINK=1`).
 - **Registrierung schließen:** `INVITE_CODE` in der `.env` setzen — dann ist die Anmeldung nur mit
   Code möglich. Login/Registrierung/Reset sind zusätzlich rate-limitiert.
+- **Demo-Zugang:** `GET|POST /api/auth/demo` meldet ausschließlich das Konto aus `DEMO_EMAIL`
+  (Standard `demo@example.com`) an. Der Client startet die Demo automatisch auf jeder
+  `demo-*`-Domain sowie mit `?demo=1`; im Demo-Modus sind Registrierung und Passwort-Reset
+  ausgeblendet. Das Demo-Konto braucht nur zu existieren — Passwort und Daten bleiben unberührt.
 
 ## Als App aufs Handy
 

@@ -35,6 +35,8 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/chat/completions}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      # Konto für den anonymen Demo-Zugang (GET/POST /api/auth/demo)
+      DEMO_EMAIL: ${DEMO_EMAIL:-demo@example.com}
       # Ohne SMTP zeigt die App den Reset-Link direkt an (auf 0 setzen, sobald Mailversand da ist)
       ALLOW_DEV_RESET_LINK: ${ALLOW_DEV_RESET_LINK:-1}
       # Registrierung nur mit Einladungscode, sobald gesetzt

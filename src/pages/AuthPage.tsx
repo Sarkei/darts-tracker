@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { KeyRound, MailCheck, Target } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { isDemoMode } from '../lib/demo';
 
 export function AuthPage() {
   const { login, register } = useAuth();
+  const isDemo = isDemoMode();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,23 +60,25 @@ export function AuthPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-[var(--color-line)] p-1">
+        <div className={`mb-4 grid gap-1 rounded-xl border border-[var(--color-line)] p-1 ${isDemo ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <button
             className={`rounded-lg py-2 text-sm font-bold ${mode === 'login' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
             onClick={() => setMode('login')}
           >
             Anmelden
           </button>
-          <button
-            className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
-            onClick={() => setMode('register')}
-          >
-            Registrieren
-          </button>
+          {!isDemo && (
+            <button
+              className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
+              onClick={() => setMode('register')}
+            >
+              Registrieren
+            </button>
+          )}
         </div>
 
         <form onSubmit={submit} className="space-y-3">
-          {mode === 'register' && (
+          {!isDemo && mode === 'register' && (
             <div>
               <label className="label">Spielername</label>
               <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Wie heißt du?" required />
@@ -114,7 +118,7 @@ export function AuthPage() {
           </button>
         </form>
 
-        {mode === 'login' && (
+        {mode === 'login' && !isDemo && (
           <div className="mt-4 text-center">
             <button
               className="text-xs font-semibold text-[#a9b9d4] underline-offset-2 hover:underline"
