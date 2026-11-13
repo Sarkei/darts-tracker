@@ -55,17 +55,17 @@
 
 [data-theme='dark'],
 .dark {
-  --bg: #0e1512;
+  --bg: #101312;
   --surface: #16211c;
-  --surface-2: #1b2822;
-  --surface-3: #223029;
+  --surface-2: #1b1e1d;
+  --surface-3: #242625;
 
-  --ink: #e9efea;
-  --muted: #9dafa4;
-  --placeholder: #6f8178;
+  --ink: #e9edeb;
+  --muted: #a4aaa7;
+  --placeholder: #7b807d;
 
-  --line: #283730;
-  --line-strong: #35473e;
+  --line: #2b2f2d;
+  --line-strong: #383c3a;
 
   --accent: #4fbf8b;
   --accent-hover: #63cf9b;
