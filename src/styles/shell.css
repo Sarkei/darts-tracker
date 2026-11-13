@@ -1,0 +1,308 @@
+/* ==========================================================================
+   App-Shell: Aufbau und Komponenten nach dem Vorbild der Portfolio-Seite.
+   Setzt die Tokens aus theme.css voraus. Frameworkunabhängig (reines CSS).
+   Keine Hex-Werte — nur var(--…), damit Hell/Dunkel automatisch folgt.
+   ========================================================================== */
+
+/* --- Grundgerüst ------------------------------------------------------- */
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.app-container {
+  width: 100%;
+  max-width: 1152px; /* max-w-6xl */
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+/* Zweiter Grauton als abgesetzte Sektion */
+.app-band {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+}
+
+.app-footer {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  padding-block: 24px;
+}
+
+/* --- Kopfzeile --------------------------------------------------------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 12px;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.app-brand__mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid var(--line);
+  flex: none;
+}
+
+.app-brand__text {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.app-brand__sub {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Navigation als Pillen */
+.app-nav {
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 768px) {
+  .app-nav { display: flex; }
+}
+
+.app-nav-item {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+
+.app-nav-item:hover { color: var(--ink); }
+
+.app-nav-item.is-active {
+  background: var(--accent-soft);
+  color: var(--on-accent-soft);
+}
+
+/* Runde Icon-Knöpfe rechts in der Kopfzeile */
+.app-iconbtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.app-iconbtn:hover { color: var(--ink); border-color: var(--line-strong); }
+
+.app-actions { display: flex; align-items: center; gap: 6px; }
+
+/* Mobilmenü */
+.app-mobile-toggle { display: grid; }
+@media (min-width: 768px) { .app-mobile-toggle { display: none; } }
+
+.app-mobile-nav {
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-mobile-nav a,
+.app-mobile-nav button {
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.app-mobile-nav a:hover,
+.app-mobile-nav button:hover { background: var(--surface-2); color: var(--ink); }
+
+/* --- Seitenkopf -------------------------------------------------------- */
+.app-hero {
+  padding-top: 48px;
+  padding-bottom: 16px;
+}
+
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.app-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  flex: none;
+}
+
+.app-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  font-size: 36px;
+  margin: 20px 0 0;
+}
+
+@media (min-width: 640px) { .app-title { font-size: 48px; } }
+
+.app-lede {
+  margin-top: 16px;
+  max-width: 42rem;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* --- Kennzahlen -------------------------------------------------------- */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 40px;
+}
+
+@media (min-width: 640px) { .stat-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.stat {
+  background: var(--surface);
+  padding: 20px;
+}
+
+.stat__value {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.stat__label {
+  margin-top: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* --- Sektionen, Karten, Buttons ---------------------------------------- */
+.app-section { padding-block: 64px; }
+
+.app-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-section__title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+@media (min-width: 640px) { .app-section__title { font-size: 36px; } }
+
+.app-section__note { font-size: 14px; color: var(--muted); }
+
+.app-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 32px;
+  align-items: start;
+}
+
+@media (min-width: 640px) { .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .app-grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color 140ms ease;
+}
+
+.app-card--link { cursor: pointer; text-decoration: none; color: inherit; display: block; text-align: left; }
+.app-card--link:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+
+.app-card__title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 20px;
+  margin: 16px 0 6px;
+}
+
+.app-card__text { font-size: 14px; line-height: 1.6; color: var(--muted); }
+
+.app-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}

@@ -1,90 +1,8 @@
+/* Tailwind 4 bleibt für die Innenansichten; Tokens und Shell kommen aus dem Designsystem. */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
-
-/* ============================================================
-   Designsystem · Grau + Grün  (Quelle: knowledge/design-system/theme.css)
-   Apps benutzen nur diese Tokens — keine eigenen Hex-Werte.
-   ============================================================ */
-
-:root {
-  /* Flächen: neutrales Grau, kein Blau-, kein Creme-Stich */
-  --bg: #f3f5f4;
-  --surface: #ffffff;
-  --surface-2: #eaeeec;
-  --surface-3: #e1e6e3;
-
-  /* Text */
-  --ink: #121a16;
-  --muted: #55635c;
-  --placeholder: #8a978f;
-
-  /* Linien */
-  --line: #dde3df;
-  --line-strong: #c6cfc9;
-
-  /* Akzent: Grün */
-  --accent: #2f7d5a;
-  --accent-hover: #276a4b;
-  --accent-soft: #e6f1eb;
-  --accent-ink: #123a28;
-  --on-accent: #ffffff;
-
-  /* Status */
-  --danger: #b4453a;
-  --danger-soft: #fbecea;
-  --warn: #a8701c;
-  --warn-soft: #fbf2e3;
-  --success: #2f7d5a;
-  --success-soft: #e6f1eb;
-
-  /* Form */
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
-
-  --shadow-sm: 0 1px 2px rgb(18 26 22 / 0.06);
-  --shadow: 0 1px 2px rgb(18 26 22 / 0.05), 0 10px 30px -22px rgb(18 26 22 / 0.4);
-
-  /* Typografie */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
-
-  color-scheme: light;
-}
-
-[data-theme='dark'],
-.dark {
-  --bg: #0e1512;
-  --surface: #16211c;
-  --surface-2: #1b2822;
-  --surface-3: #223029;
-
-  --ink: #e9efea;
-  --muted: #9dafa4;
-  --placeholder: #6f8178;
-
-  --line: #283730;
-  --line-strong: #35473e;
-
-  --accent: #4fbf8b;
-  --accent-hover: #63cf9b;
-  --accent-soft: rgb(79 191 139 / 0.14);
-  --accent-ink: #b9e8d0;
-  --on-accent: #08150f;
-
-  --danger: #f08a7a;
-  --danger-soft: rgb(240 138 122 / 0.14);
-  --warn: #e8b25f;
-  --warn-soft: rgb(232 178 95 / 0.14);
-  --success: #4fbf8b;
-  --success-soft: rgb(79 191 139 / 0.14);
-
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -24px rgb(0 0 0 / 0.9);
-
-  color-scheme: dark;
-}
+@import './styles/theme.css';
+@import './styles/shell.css';
 
 /* Tailwind 4: Utilities zeigen ausschließlich auf die Tokens. */
 @theme {
@@ -475,3 +393,168 @@ body {
 .scroll-x::-webkit-scrollbar {
   display: none;
 }
+
+/* ---------- Shell-Ergänzungen (nur Tokens aus theme.css) ---------- */
+
+/* Marke bleibt einzeilig */
+.app-brand__text {
+  white-space: nowrap;
+}
+
+/* Fußzeile unten halten, auch wenn eine Ansicht kürzer ist als das Fenster */
+.app {
+  display: flex;
+  flex-direction: column;
+}
+
+.app > main {
+  flex: 1 1 auto;
+}
+
+/* Sieben Bereiche brauchen die Pillenleiste erst ab 1024 px,
+   darunter übernimmt das Mobilmenü (sonst läuft die Kopfzeile über). */
+@media (max-width: 1023px) {
+  .app-nav {
+    display: none;
+  }
+  .app-mobile-toggle {
+    display: grid;
+  }
+  .app-cta span {
+    display: none;
+  }
+}
+
+/* Auf schmalen Geräten wandern Einstellungen und Abmelden ins Menü. */
+@media (max-width: 639px) {
+  .app-iconbtn--wide {
+    display: none;
+  }
+}
+
+.app-mobile-nav__sep {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 0;
+}
+
+.app-mobile-nav__extra {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Beim Wechsel auf Desktop nie unter der Kopfzeile hängen bleiben */
+@media (min-width: 1024px) {
+  .app-mobile-nav {
+    display: none;
+  }
+}
+
+.app-mobile-nav button.is-active {
+  background: var(--accent-soft);
+  color: var(--on-accent-soft);
+}
+
+/* Gestapelte Zeilen: Spalte darf schrumpfen, sonst laufen lange Namen über */
+.app-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 32px;
+}
+
+
+/* Innenansichten: gleicher Container wie der Seitenkopf */
+.app-page {
+  padding-block: 32px 64px;
+}
+
+/* Primärer Kopfzeilen-Knopf als Pille */
+.app-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.app-cta:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.app-cta span {
+  display: none;
+}
+@media (min-width: 640px) {
+  .app-cta span {
+    display: inline;
+  }
+}
+
+/* Kartenkopf: Icon in Grün links, Pfeil rechts */
+.app-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--accent);
+}
+.app-card__arrow {
+  color: var(--muted);
+  flex: none;
+  transition: color 140ms ease, transform 140ms ease;
+}
+.app-card--link:hover .app-card__arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+/* Zeile in Listen (Sektion auf dem zweiten Grauton) */
+.app-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.app-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+.app-row__title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.3;
+}
+.app-row__meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.app-empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+

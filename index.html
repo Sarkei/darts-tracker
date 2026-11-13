@@ -1,9 +1,17 @@
 <!doctype html>
-<html lang="de" data-theme="dark">
+<html lang="de" data-theme="light">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Ohne Aufblitzen: gespeicherte Wahl vor dem ersten Zeichnen setzen
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('darts-theme') === 'dark' ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0e1512" />
+    <meta name="theme-color" content="#f3f5f4" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Darts" />
