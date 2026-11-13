@@ -14,7 +14,7 @@
 
 .app-container {
   width: 100%;
-  max-width: 1152px; /* max-w-6xl */
+  max-width: 1360px; /* Portfolio-Vorlage: breiter Inhalt */
   margin-inline: auto;
   padding-inline: 20px;
 }
