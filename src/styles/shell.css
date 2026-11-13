@@ -307,3 +307,11 @@
   letter-spacing: 0.12em;
   color: var(--muted);
 }
+
+/* Umrandeter Knopf: graue Flaeche, gruene Kante - sichtbar ohne grell zu werden */
+.btn-outline {
+  border: 1px solid var(--accent);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.btn-outline:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
