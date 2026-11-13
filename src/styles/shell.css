@@ -120,6 +120,7 @@
 .app-nav-item.is-active {
   background: var(--accent-soft);
   color: var(--on-accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* Runde Icon-Knöpfe rechts in der Kopfzeile */
@@ -129,9 +130,9 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   background: transparent;
-  color: var(--muted);
+  color: var(--ink);
   cursor: pointer;
   transition: color 140ms ease, border-color 140ms ease;
 }
