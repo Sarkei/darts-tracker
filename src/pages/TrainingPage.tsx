@@ -149,30 +149,30 @@ export function TrainingPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-extrabold">Training</h1>
-        <p className="text-sm text-[#a9b9d4]">Vier Übungen, Ergebnisse landen in deiner Statistik.</p>
+        <p className="text-sm text-[var(--muted)]">Vier Übungen, Ergebnisse landen in deiner Statistik.</p>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-4">
         {(Object.keys(MODE_INFO) as Mode[]).map((m) => (
           <button
             key={m}
-            className={`card p-3 text-left ${mode === m ? 'border-[#3ee383]' : ''}`}
+            className={`card p-3 text-left ${mode === m ? 'border-[var(--accent)]' : ''}`}
             onClick={() => start(m)}
           >
             <p className="text-sm font-bold">{MODE_INFO[m].title}</p>
-            <p className="mt-1 text-[11px] leading-snug text-[#a9b9d4]">{MODE_INFO[m].hint}</p>
+            <p className="mt-1 text-[11px] leading-snug text-[var(--muted)]">{MODE_INFO[m].hint}</p>
           </button>
         ))}
       </div>
 
       {mode && (
         <div className="card space-y-4 p-5 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#a9b9d4]">{MODE_INFO[mode].title}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">{MODE_INFO[mode].title}</p>
 
           {done ? (
             <div className="space-y-2">
               <p className="text-4xl font-black">{score}</p>
-              <p className="text-sm text-[#a9b9d4]">
+              <p className="text-sm text-[var(--muted)]">
                 {hits} Treffer · {darts} Darts {saved ? `· ${saved}` : ''}
               </p>
               <button className="btn btn-primary" onClick={() => start(mode)}>
@@ -183,7 +183,7 @@ export function TrainingPage() {
             <>
               <p className="text-6xl font-black tabular-nums">
                 {targetLabel}
-                {mode === 'bobs27' && <span className="ml-2 text-2xl text-[#a9b9d4]">{score}</span>}
+                {mode === 'bobs27' && <span className="ml-2 text-2xl text-[var(--muted)]">{score}</span>}
               </p>
 
               {mode === 'checkout' ? (
@@ -208,7 +208,7 @@ export function TrainingPage() {
                 </div>
               )}
 
-              <div className="flex justify-between text-xs text-[#a9b9d4]">
+              <div className="flex justify-between text-xs text-[var(--muted)]">
                 <span>
                   Ziel {Math.min(index + 1, mode === 'checkout' ? 10 : 20)}/
                   {mode === 'checkout' ? 10 : 20}
@@ -229,7 +229,7 @@ export function TrainingPage() {
             {summary.map((s) => (
               <div key={s.mode} className="flex items-center justify-between">
                 <span>{MODE_INFO[s.mode]?.title ?? s.mode}</span>
-                <span className="text-[#a9b9d4]">
+                <span className="text-[var(--muted)]">
                   {s.sessions}× · Bestwert {s.best} · Ø {s.avg}
                 </span>
               </div>
@@ -244,12 +244,12 @@ export function TrainingPage() {
           <div className="max-h-64 space-y-1 overflow-y-auto text-sm">
             {sessions.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-2">
-                <span className="truncate text-[#a9b9d4]">
+                <span className="truncate text-[var(--muted)]">
                   {new Date(s.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })} ·{' '}
                   {MODE_INFO[s.mode]?.title ?? s.mode}
                 </span>
                 <span className="font-bold tabular-nums">
-                  {s.score} <span className="text-xs font-normal text-[#a9b9d4]">({s.hits}/{s.darts})</span>
+                  {s.score} <span className="text-xs font-normal text-[var(--muted)]">({s.hits}/{s.darts})</span>
                 </span>
               </div>
             ))}
@@ -258,7 +258,7 @@ export function TrainingPage() {
       )}
 
       {!mode && sessions.length === 0 && (
-        <div className="card flex items-center gap-3 p-5 text-sm text-[#a9b9d4]">
+        <div className="card flex items-center gap-3 p-5 text-sm text-[var(--muted)]">
           <Target className="h-5 w-5" /> Wähle oben eine Übung — die Ergebnisse erscheinen hier und in der Statistik.
         </div>
       )}

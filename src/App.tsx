@@ -73,7 +73,7 @@ export default function App() {
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-24 pt-4 md:pb-8">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <button className="flex shrink-0 items-center gap-2" onClick={() => navigate('/')}>
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-[#04160c]">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-accent)] text-[var(--on-accent)]">
             <Target className="h-5 w-5" />
           </span>
           <span className="text-lg font-extrabold tracking-tight">Darts</span>
@@ -126,7 +126,7 @@ export default function App() {
         {route === '/settings' && <SettingsPage />}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-[var(--color-line)] bg-[#080f1c]/95 px-2 py-2 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-[var(--color-line)] bg-[var(--surface)]/95 px-2 py-2 backdrop-blur md:hidden">
         {nav.map((item) => {
           const Icon = item.icon;
           const active = route === item.to;

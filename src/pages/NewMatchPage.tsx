@@ -106,7 +106,7 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
                   key={p.id}
                   onClick={() => toggle(p.id)}
                   className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-left ${
-                    on ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)] bg-white/[0.02]'
+                    on ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]' : 'border-[var(--color-line)] bg-[var(--surface-2)]'
                   }`}
                 >
                   <span className="truncate">
@@ -241,14 +241,14 @@ export function NewMatchPage({ onCreated }: { onCreated: (id: number) => void })
             </button>
           </div>
           {mode === 'auto' && (
-            <p className="mt-2 rounded-lg bg-white/5 p-3 text-xs text-[var(--color-muted)]">
+            <p className="mt-2 rounded-lg bg-[var(--surface-2)] p-3 text-xs text-[var(--color-muted)]">
               Kamera-Tracking ist vorbereitet: Nach dem Start wählst du pro Gerät die Rolle „Kamera" oder „Dashboard".
               Bis die Erkennung aktiv ist, kannst du jederzeit manuell eintragen — beides landet im selben Spiel.
             </p>
           )}
         </div>
 
-        {error && <p className="rounded-lg bg-[rgba(255,93,108,0.12)] px-3 py-2 text-sm text-[#ffb3ba]">{error}</p>}
+        {error && <p className="rounded-lg bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">{error}</p>}
 
         <button className="btn btn-primary w-full" disabled={busy || selected.length < 2} onClick={start}>
           {busy ? 'starte …' : <><Play className="h-4 w-4" /> Match starten</>}

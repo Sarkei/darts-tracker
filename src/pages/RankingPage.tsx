@@ -26,7 +26,7 @@ export function RankingPage() {
           <div key={entry.playerId} className="card flex items-center gap-3 p-4">
             <span
               className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-sm font-extrabold ${
-                index === 0 ? 'bg-[var(--color-accent)] text-[#04160c]' : 'bg-white/5 text-[var(--color-muted)]'
+                index === 0 ? 'bg-[var(--color-accent)] text-[var(--on-accent)]' : 'bg-[var(--surface-2)] text-[var(--color-muted)]'
               }`}
             >
               {index === 0 ? <Crown className="h-4 w-4" /> : index + 1}

@@ -38,12 +38,12 @@ export function WatchPage({ code }: { code: string }) {
       <div className="flex min-h-screen items-center justify-center px-4 text-center">
         <div className="card p-6">
           <p className="text-lg font-bold">{error}</p>
-          <p className="mt-1 text-sm text-[#a9b9d4]">Code prüfen — er steht in der App unter dem Match.</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Code prüfen — er steht in der App unter dem Match.</p>
         </div>
       </div>
     );
   }
-  if (!state) return <div className="p-10 text-center text-[#a9b9d4]">lade …</div>;
+  if (!state) return <div className="p-10 text-center text-[var(--muted)]">lade …</div>;
 
   const active = state.players.find((p) => p.matchPlayerId === state.currentMatchPlayerId);
   const winner = state.players.find((p) => p.matchPlayerId === state.match.winnerPlayerId);
@@ -54,15 +54,15 @@ export function WatchPage({ code }: { code: string }) {
         <span className="chip">
           <Radio className="h-3.5 w-3.5" /> live · {code.toUpperCase()}
         </span>
-        <span className="text-xs text-[#a9b9d4]">
+        <span className="text-xs text-[var(--muted)]">
           {state.match.startScore} · Best of {state.match.bestOf} · Leg {state.currentLegIndex}
         </span>
       </div>
 
       {winner && (
-        <div className="card border-[#3ee383] p-4 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#a9b9d4]">Beendet</p>
-          <p className="text-3xl font-black text-[#3ee383]">{winner.name} gewinnt</p>
+        <div className="card border-[var(--accent)] p-4 text-center">
+          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">Beendet</p>
+          <p className="text-3xl font-black text-[var(--accent)]">{winner.name} gewinnt</p>
         </div>
       )}
 
@@ -72,16 +72,16 @@ export function WatchPage({ code }: { code: string }) {
           return (
             <div
               key={p.matchPlayerId}
-              className={`card p-5 text-center ${isActive ? 'border-[#3ee383]' : ''}`}
+              className={`card p-5 text-center ${isActive ? 'border-[var(--accent)]' : ''}`}
             >
-              <p className="truncate text-sm font-bold uppercase tracking-widest text-[#a9b9d4]">
+              <p className="truncate text-sm font-bold uppercase tracking-widest text-[var(--muted)]">
                 {p.name} · {p.legsWon}
               </p>
               <p className={`text-[clamp(3rem,12vw,5.5rem)] font-black leading-none tabular-nums ${isActive ? '' : 'opacity-70'}`}>
                 {p.remaining}
               </p>
               {isActive && p.checkoutSuggestion?.[0] && (
-                <p className="mt-1 text-sm font-bold text-[#3ee383]">{p.checkoutSuggestion[0].label}</p>
+                <p className="mt-1 text-sm font-bold text-[var(--accent)]">{p.checkoutSuggestion[0].label}</p>
               )}
             </div>
           );
@@ -96,11 +96,11 @@ export function WatchPage({ code }: { code: string }) {
               const p = state.players.find((x) => x.matchPlayerId === v.matchPlayerId);
               return (
                 <div key={v.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate text-[#a9b9d4]">{p?.name}</span>
-                  <span className="font-mono text-xs text-[#a9b9d4]">
+                  <span className="truncate text-[var(--muted)]">{p?.name}</span>
+                  <span className="font-mono text-xs text-[var(--muted)]">
                     {v.darts.map((d) => dartLabel(d.ring, d.number)).join(' ')}
                   </span>
-                  <span className={`w-14 text-right font-bold tabular-nums ${v.bust ? 'text-[#ff7a86]' : ''}`}>
+                  <span className={`w-14 text-right font-bold tabular-nums ${v.bust ? 'text-[var(--danger)]' : ''}`}>
                     {v.bust ? 'Bust' : v.score}
                   </span>
                 </div>

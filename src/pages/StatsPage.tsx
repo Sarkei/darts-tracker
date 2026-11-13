@@ -29,10 +29,10 @@ function arcPath(cx: number, cy: number, r1: number, r2: number, a1: number, a2:
 }
 
 function heat(count: number, max: number) {
-  if (!count) return 'rgba(255,255,255,0.04)';
+  if (!count) return 'var(--surface-2)';
   const t = Math.min(1, count / Math.max(1, max));
-  const alpha = 0.18 + t * 0.75;
-  return `rgba(56, 224, 123, ${alpha.toFixed(2)})`;
+  const percent = Math.round((0.18 + t * 0.75) * 100);
+  return `color-mix(in srgb, var(--accent) ${percent}%, transparent)`;
 }
 
 interface H2HRow {
@@ -215,13 +215,13 @@ export function StatsPage() {
                       key={`${number}-${bandIndex}`}
                       d={arcPath(cx, cy, band.r1, band.r2, a1, a2)}
                       fill={heat(stats.fields[band.key] ?? 0, maxField)}
-                      stroke="rgba(255,255,255,0.09)"
+                      stroke="var(--line)"
                       strokeWidth="0.6"
                     />
                   ));
                 })}
-                <circle cx={cx} cy={cy} r={RADII.bull} fill={heat(stats.fields['25'] ?? 0, maxField)} stroke="rgba(255,255,255,0.09)" />
-                <circle cx={cx} cy={cy} r={RADII.bullseye} fill={heat(stats.fields['DB'] ?? 0, maxField)} stroke="rgba(255,255,255,0.09)" />
+                <circle cx={cx} cy={cy} r={RADII.bull} fill={heat(stats.fields['25'] ?? 0, maxField)} stroke="var(--line)" />
+                <circle cx={cx} cy={cy} r={RADII.bullseye} fill={heat(stats.fields['DB'] ?? 0, maxField)} stroke="var(--line)" />
                 {BOARD_ORDER.map((number, index) => {
                   const p = polar(cx, cy, RADII.double + 16, index * 18);
                   return (
@@ -233,7 +233,7 @@ export function StatsPage() {
                       dominantBaseline="middle"
                       fontSize="11"
                       fontWeight="700"
-                      fill="#8fa0bd"
+                      fill="var(--muted)"
                     >
                       {number}
                     </text>
@@ -252,7 +252,7 @@ export function StatsPage() {
               {topFields.map(([field, count]) => (
                 <div key={field} className="flex items-center gap-2 text-sm">
                   <span className="w-12 font-mono font-bold">{field}</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
                     <div
                       className="h-full rounded-full bg-[var(--color-accent)]"
                       style={{ width: `${Math.round((count / maxField) * 100)}%` }}
@@ -273,16 +273,16 @@ export function StatsPage() {
                   return (
                     <div key={week.week} className="flex flex-1 flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-t bg-[#3ee383]"
+                        className="w-full rounded-t bg-[var(--accent)]"
                         style={{ height: `${Math.max(4, (week.average / max) * 90)}px` }}
                         title={`${week.week}: ${week.average} Average`}
                       />
-                      <span className="text-[10px] text-[#a9b9d4]">{week.week.split('-')[1]}</span>
+                      <span className="text-[10px] text-[var(--muted)]">{week.week.split('-')[1]}</span>
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-1 text-xs text-[#a9b9d4]">
+              <p className="mt-1 text-xs text-[var(--muted)]">
                 Letzte Woche: {stats.history[stats.history.length - 1].average} Average ·{' '}
                 {stats.history[stats.history.length - 1].checkouts} Checkouts
               </p>
@@ -296,10 +296,10 @@ export function StatsPage() {
                 {h2h.map((row) => (
                   <div key={row.playerId} className="flex items-center justify-between gap-2">
                     <span className="truncate">{row.name}</span>
-                    <span className={row.wins >= row.losses ? 'font-bold text-[#3ee383]' : 'font-bold text-[#ff9aa3]'}>
+                    <span className={row.wins >= row.losses ? 'font-bold text-[var(--accent)]' : 'font-bold text-[var(--danger)]'}>
                       {row.wins}:{row.losses}
                     </span>
-                    <span className="text-xs text-[#a9b9d4]">
+                    <span className="text-xs text-[var(--muted)]">
                       Legs {row.legsFor}:{row.legsAgainst}
                     </span>
                   </div>
@@ -315,7 +315,7 @@ export function StatsPage() {
                 <Sparkles className="h-3.5 w-3.5" /> {planBusy ? 'denke nach …' : 'erstellen'}
               </button>
             </div>
-            {error && <p className="mt-2 text-sm text-[#ffb3ba]">{error}</p>}
+            {error && <p className="mt-2 text-sm text-[var(--danger)]">{error}</p>}
             {plan && (
               <div className="mt-3 space-y-3">
                 <div className="flex flex-wrap gap-1">
@@ -326,7 +326,7 @@ export function StatsPage() {
                   ))}
                 </div>
                 {plan.plan.map((step) => (
-                  <div key={step.title} className="rounded-xl bg-white/[0.04] p-3">
+                  <div key={step.title} className="rounded-xl bg-[var(--surface-2)] p-3">
                     <p className="flex items-center justify-between text-sm font-bold">
                       {step.title}
                       <span className="text-xs text-[var(--color-muted)]">{step.minutes} Min</span>

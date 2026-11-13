@@ -30,15 +30,15 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
         <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">Willkommen zurück</p>
         <h1 className="mt-1 text-2xl font-extrabold">{user?.displayName}</h1>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl bg-[#1b2b45] p-3">
+          <div className="rounded-xl bg-[var(--surface-2)] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.average ?? 0}</p>
             <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">Average</p>
           </div>
-          <div className="rounded-xl bg-[#1b2b45] p-3">
+          <div className="rounded-xl bg-[var(--surface-2)] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.checkoutQuote ?? 0}%</p>
             <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">Checkout</p>
           </div>
-          <div className="rounded-xl bg-[#1b2b45] p-3">
+          <div className="rounded-xl bg-[var(--surface-2)] p-3">
             <p className="text-2xl font-extrabold tabular-nums">{stats?.count180 ?? 0}</p>
             <p className="text-[11px] uppercase tracking-widest text-[var(--color-muted)]">180er</p>
           </div>

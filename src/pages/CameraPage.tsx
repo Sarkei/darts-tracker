@@ -503,19 +503,27 @@ export function CameraPage({ matchId, onNavigate }: Props) {
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
 
+    // Farben aus dem Designsystem (Canvas kann keine CSS-Variablen auflösen)
+    const rootStyle = getComputedStyle(document.documentElement);
+    const token = (name: string) => rootStyle.getPropertyValue(name).trim();
+    const accent = token('--accent') || '#4fbf8b';
+    const warn = token('--warn') || '#a8701c';
+    ctx.globalAlpha = 1;
+
     // Board-Ringe als Orientierung, sobald kalibriert
     if (calibrated && boardToImage.current) {
       const m = boardToImage.current;
       ctx.lineWidth = Math.max(1.5, w / 600);
-      const rings: Array<[number, string]> = [
-        [BOARD_MM.doubleOuter, 'rgba(62,227,131,0.9)'],
-        [BOARD_MM.doubleInner, 'rgba(62,227,131,0.35)'],
-        [BOARD_MM.tripleOuter, 'rgba(255,255,255,0.28)'],
-        [BOARD_MM.tripleInner, 'rgba(255,255,255,0.28)'],
-        [BOARD_MM.bull, 'rgba(255,255,255,0.4)'],
+      const rings: Array<[number, string, number]> = [
+        [BOARD_MM.doubleOuter, accent, 0.9],
+        [BOARD_MM.doubleInner, accent, 0.35],
+        [BOARD_MM.tripleOuter, token('--ink') || '#ffffff', 0.28],
+        [BOARD_MM.tripleInner, token('--ink') || '#ffffff', 0.28],
+        [BOARD_MM.bull, token('--ink') || '#ffffff', 0.4],
       ];
-      for (const [radius, color] of rings) {
+      for (const [radius, color, alpha] of rings) {
         ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha;
         ctx.beginPath();
         for (let i = 0; i <= 72; i += 1) {
           const a = (i / 72) * Math.PI * 2;
@@ -526,7 +534,8 @@ export function CameraPage({ matchId, onNavigate }: Props) {
         ctx.stroke();
       }
       // 20er-Sektor markieren
-      ctx.strokeStyle = 'rgba(255,207,107,0.85)';
+      ctx.strokeStyle = warn;
+      ctx.globalAlpha = 0.85;
       ctx.beginPath();
       const top = applyMatrix(m, { x: 0, y: -BOARD_MM.tripleInner });
       const top2 = applyMatrix(m, { x: 0, y: -BOARD_MM.doubleOuter });
@@ -541,16 +550,19 @@ export function CameraPage({ matchId, onNavigate }: Props) {
       const y = point.y * h;
       ctx.beginPath();
       ctx.arc(x, y, Math.max(8, w / 45), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(62,227,131,0.25)';
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = 0.25;
       ctx.fill();
       ctx.lineWidth = Math.max(2, w / 300);
-      ctx.strokeStyle = '#3ee383';
+      ctx.strokeStyle = accent;
+      ctx.globalAlpha = 1;
       ctx.stroke();
-      ctx.fillStyle = '#eef3ff';
+      ctx.fillStyle = token('--ink') || '#ffffff';
       ctx.font = `bold ${Math.max(11, w / 45)}px system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(TARGET_LABELS[index] ?? '', x, y - Math.max(14, w / 35));
     });
+    ctx.globalAlpha = 1;
   }, [overlayPoints, calibrated, drawTick]);
 
   return (
@@ -576,7 +588,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
             onPointerUp={onPointerUp}
           />
           {!streaming && (
-            <div className="absolute inset-0 grid place-items-center bg-[#05080f]/85 p-6 text-center text-sm text-[#a9b9d4]">
+            <div className="absolute inset-0 grid place-items-center bg-[var(--bg)]/85 p-6 text-center text-sm text-[var(--muted)]">
               {error ?? 'Kamera wird gestartet …'}
             </div>
           )}
@@ -586,7 +598,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
       {points && (
         <div className="card p-3">
           <p className="label">Kalibrierung</p>
-          <p className="text-xs text-[#a9b9d4]">
+          <p className="text-xs text-[var(--muted)]">
             Die vier Punkte liegen auf der <strong>Außenkante des Doppelrings</strong> bei 20 (oben), 6 (rechts),
             3 (unten) und 11 (links). Ziehen zum Korrigieren.
           </p>
@@ -605,26 +617,26 @@ export function CameraPage({ matchId, onNavigate }: Props) {
         <div className="flex items-center justify-between gap-2">
           <p className="label !mb-0">Status</p>
           <span
-            className={`chip ${quality === 'good' ? 'chip-on' : quality === 'bad' ? '!border-[#ff7a86] !text-[#ff9aa3]' : ''}`}
+            className={`chip ${quality === 'good' ? 'chip-on' : quality === 'bad' ? '!border-[var(--danger)] !text-[var(--danger)]' : ''}`}
           >
             {message}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-[#a9b9d4]">Erkannte Würfe</span>
+          <span className="text-[var(--muted)]">Erkannte Würfe</span>
           <span className="font-bold tabular-nums">{detections}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[#a9b9d4]">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
           <span className="chip">{fps} Bilder/s</span>
-          {queued > 0 && <span className="chip !text-[#ffcf6b]">{queued} gepuffert</span>}
-          {drift && <span className="chip !text-[#ffcf6b]">Kamera leicht verschoben — Punkte nachgezogen</span>}
+          {queued > 0 && <span className="chip !text-[var(--warn)]">{queued} gepuffert</span>}
+          {drift && <span className="chip !text-[var(--warn)]">Kamera leicht verschoben — Punkte nachgezogen</span>}
         </div>
 
-        <div className="rounded-xl bg-[#1b2b45] p-3">
+        <div className="rounded-xl bg-[var(--surface-2)] p-3">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#a9b9d4]">Probelauf</p>
-              <p className="text-xs text-[#a9b9d4]">Würfe zählen, ohne sie zu buchen — zum Prüfen der Erkennung.</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">Probelauf</p>
+              <p className="text-xs text-[var(--muted)]">Würfe zählen, ohne sie zu buchen — zum Prüfen der Erkennung.</p>
             </div>
             <button
               className={`btn !px-3 !py-2 text-xs ${probeMode ? 'btn-primary' : ''}`}
@@ -638,17 +650,17 @@ export function CameraPage({ matchId, onNavigate }: Props) {
           </div>
           {probeMode && (
             <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-[#a9b9d4]">erkannt</span>
+              <span className="text-[var(--muted)]">erkannt</span>
               <span className="font-bold">{probe.detected} Würfe</span>
             </div>
           )}
         </div>
         {lastHit && (
-          <div className="rounded-xl bg-[#1b2b45] p-3">
-            <p className="text-xs uppercase tracking-widest text-[#a9b9d4]">Letzter Wurf</p>
+          <div className="rounded-xl bg-[var(--surface-2)] p-3">
+            <p className="text-xs uppercase tracking-widest text-[var(--muted)]">Letzter Wurf</p>
             <p className="text-2xl font-extrabold">
               {lastHit.label}{' '}
-              <span className="text-sm font-semibold text-[#a9b9d4]">
+              <span className="text-sm font-semibold text-[var(--muted)]">
                 · {Math.round(lastHit.confidence * 100)} % sicher
               </span>
             </p>
@@ -658,7 +670,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
           <span>Sichere Würfe automatisch buchen</span>
           <input
             type="checkbox"
-            className="h-5 w-5 accent-[#3ee383]"
+            className="h-5 w-5 accent-[var(--accent)]"
             checked={autoDetect}
             onChange={(e) => {
               setAutoDetect(e.target.checked);
@@ -666,7 +678,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
             }}
           />
         </label>
-        <p className="text-xs text-[#8fa0bd]">
+        <p className="text-xs text-[var(--placeholder)]">
           Aus: jeder Treffer wird als Vorschlag ans Dashboard geschickt und dort bestätigt. An: Treffer ab 60 %
           Sicherheit landen direkt im Spiel, unsichere trotzdem als Vorschlag.
         </p>
@@ -693,10 +705,10 @@ export function CameraPage({ matchId, onNavigate }: Props) {
             <Square className="h-4 w-4" /> Erkennung aus
           </button>
         </div>
-        {error && <p className="text-sm text-[#ffb3ba]">{error}</p>}
+        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       </div>
 
-      <p className="text-center text-xs text-[#8fa0bd]">
+      <p className="text-center text-xs text-[var(--placeholder)]">
         Tipp: Handy quer oder hochkant fest aufstellen, Board vollständig im Bild, gleichmäßiges Licht. Nach jedem
         Leg die Darts abziehen — die Referenz zieht automatisch nach.
       </p>

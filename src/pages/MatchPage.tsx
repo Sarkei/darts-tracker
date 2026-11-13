@@ -226,7 +226,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       </div>
 
       {!hasRole && (
-        <div className="card border-[#3ee383] p-4">
+        <div className="card border-[var(--accent)] p-4">
           <p className="label">Wie soll dieses Gerät mitmachen?</p>
           <div className="grid gap-2 sm:grid-cols-3">
             <button
@@ -260,13 +260,13 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       )}
 
       {candidates.length > 0 && (
-        <div className="card border-[#ffcf6b] p-4">
+        <div className="card border-[var(--warn)] p-4">
           <p className="label !mb-2">Kamera-Vorschläge ({candidates.length})</p>
           <div className="space-y-2">
             {candidates.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#1b2b45] p-2">
+              <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--surface-2)] p-2">
                 <span className="font-bold">{dartLabel(c.ring, c.number)}</span>
-                <span className="text-xs text-[#a9b9d4]">{Math.round(c.confidence * 100)} % sicher</span>
+                <span className="text-xs text-[var(--muted)]">{Math.round(c.confidence * 100)} % sicher</span>
                 <div className="flex gap-1">
                   <button
                     className="btn btn-primary !px-2 !py-1 text-xs"
@@ -290,15 +290,15 @@ export function MatchPage({ matchId, onNavigate }: Props) {
       {lastCompletedVisit && !state.finished && (
         <div className="card flex items-center justify-between gap-3 p-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[#a9b9d4]">Letzte Runde</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--muted)]">Letzte Runde</p>
             <p className="text-sm font-bold">
               {playerById(lastCompletedVisit.matchPlayerId)?.name}
             </p>
           </div>
-          <p className="font-mono text-xs text-[#a9b9d4]">
+          <p className="font-mono text-xs text-[var(--muted)]">
             {lastCompletedVisit.darts.map((d) => dartLabel(d.ring, d.number)).join(' ')}
           </p>
-          <p className={`text-2xl font-extrabold tabular-nums ${lastCompletedVisit.bust ? 'text-[#ff7a86]' : ''}`}>
+          <p className={`text-2xl font-extrabold tabular-nums ${lastCompletedVisit.bust ? 'text-[var(--danger)]' : ''}`}>
             {lastCompletedVisit.bust ? 'Bust' : lastCompletedVisit.score}
           </p>
         </div>
@@ -326,7 +326,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           <p className="flex items-center gap-2 text-sm font-bold text-[var(--color-accent)]">
             <Bot className="h-4 w-4" /> {summary.headline}
           </p>
-          <p className="text-sm text-[#cfdaf0]">{summary.summary}</p>
+          <p className="text-sm text-[var(--ink)]">{summary.summary}</p>
           {summary.highlights.length > 0 && (
             <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--color-muted)]">
               {summary.highlights.map((h) => (
@@ -355,17 +355,17 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             <div
               key={p.matchPlayerId}
               className={`card p-4 text-center transition-colors ${
-                isActive ? 'border-[var(--color-accent)] bg-[#12281d]' : 'opacity-80'
+                isActive ? 'border-[var(--color-accent)] bg-[var(--accent-soft)]' : 'opacity-80'
               }`}
             >
-              <p className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#a9b9d4]">
+              <p className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[var(--muted)]">
                 <Avatar value={p.avatar} className="h-3.5 w-3.5" />
                 <span className="truncate">{p.name}</span>
               </p>
-              <p className={`mt-1 font-black leading-none tabular-nums ${isActive ? 'text-[clamp(3rem,11vw,5rem)]' : 'text-[clamp(2rem,8vw,3.5rem)] text-[#c3d1e8]'}`}>
+              <p className={`mt-1 font-black leading-none tabular-nums ${isActive ? 'text-[clamp(3rem,11vw,5rem)]' : 'text-[clamp(2rem,8vw,3.5rem)] text-[var(--muted)]'}`}>
                 {p.remaining}
               </p>
-              <p className="mt-1 text-[11px] uppercase tracking-widest text-[#8fa0bd]">
+              <p className="mt-1 text-[11px] uppercase tracking-widest text-[var(--placeholder)]">
                 {state.match.format === 'sets' ? `${p.setsWon} Sätze · ${p.legsWon} Legs` : `${p.legsWon} Legs`}
                 {isActive && ' · dran'}
               </p>
@@ -388,13 +388,13 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           </div>
 
           {active.bogeyHint && (
-            <p className="rounded-xl border border-[#ffcf6b]/50 bg-[#2a2110] px-3 py-2 text-center text-sm text-[#ffcf6b]">
+            <p className="rounded-xl border border-[var(--warn)]/50 bg-[var(--warn-soft)] px-3 py-2 text-center text-sm text-[var(--warn)]">
               {active.remaining} ist nicht in drei Darts finishbar — {active.bogeyHint.toLowerCase()}.
             </p>
           )}
 
           {route && (
-            <div className="rounded-2xl border border-[#2c8f56] bg-[#0d3521] p-3 text-center">
+            <div className="rounded-2xl border border-[var(--accent)] bg-[var(--accent-soft)] p-3 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent)]">Checkout</p>
               <p className="mt-1 text-2xl font-extrabold tracking-wide">{route.label}</p>
               {alternatives.length > 0 && (
@@ -406,7 +406,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           )}
 
           {active.remaining > 170 && (
-            <p className="text-center text-xs text-[#8fa0bd]">
+            <p className="text-center text-xs text-[var(--placeholder)]">
               Noch {active.remaining - 170} Punkte bis zum ersten Finish-Fenster.
             </p>
           )}
@@ -474,7 +474,7 @@ export function MatchPage({ matchId, onNavigate }: Props) {
             </button>
           </div>
 
-          {error && <p className="mt-2 text-sm text-[#ffb3ba]">{error}</p>}
+          {error && <p className="mt-2 text-sm text-[var(--danger)]">{error}</p>}
         </div>
       )}
 
@@ -484,14 +484,14 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           {recentVisits.map((v) => {
             const p = playerById(v.matchPlayerId);
             return (
-              <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg px-1 py-1 text-sm odd:bg-white/[0.03]">
+              <div key={v.id} className="flex items-center justify-between gap-2 rounded-lg px-1 py-1 text-sm odd:bg-[var(--surface-2)]">
                 <span className="flex min-w-0 items-center gap-2">
                   <span><Avatar value={p?.avatar} /></span>
                   <span className="truncate text-[var(--color-muted)]">{p?.name}</span>
                 </span>
                 <span className="flex items-center gap-1 font-mono text-xs text-[var(--color-muted)]">
                   {v.darts.map((d) => (
-                    <span key={d.id} className="rounded bg-white/5 px-1.5 py-0.5">
+                    <span key={d.id} className="rounded bg-[var(--surface-2)] px-1.5 py-0.5">
                       {dartLabel(d.ring, d.number)}
                     </span>
                   ))}
@@ -543,8 +543,8 @@ export function MatchPage({ matchId, onNavigate }: Props) {
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[#a9b9d4]">Zuschauer-Code</span>
-          <span className="rounded-lg bg-[#1b2b45] px-2 py-1 font-mono text-sm font-bold tracking-widest">
+          <span className="text-[var(--muted)]">Zuschauer-Code</span>
+          <span className="rounded-lg bg-[var(--surface-2)] px-2 py-1 font-mono text-sm font-bold tracking-widest">
             {state.match.shareCode ?? '—'}
           </span>
           <button

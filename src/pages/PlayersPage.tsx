@@ -67,7 +67,7 @@ export function PlayersPage() {
             <UserPlus className="h-4 w-4" />
           </button>
         </div>
-        {error && <p className="text-sm text-[#ffb3ba]">{error}</p>}
+        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       </div>
 
       <div className="space-y-2">

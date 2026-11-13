@@ -51,7 +51,7 @@ export function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="card w-full max-w-sm p-6">
         <div className="mb-5 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-accent)] text-[#04160c]">
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-accent)] text-[var(--on-accent)]">
             <Target className="h-6 w-6" strokeWidth={2.4} />
           </span>
           <div>
@@ -62,14 +62,14 @@ export function AuthPage() {
 
         <div className={`mb-4 grid gap-1 rounded-xl border border-[var(--color-line)] p-1 ${isDemo ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <button
-            className={`rounded-lg py-2 text-sm font-bold ${mode === 'login' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
+            className={`rounded-lg py-2 text-sm font-bold ${mode === 'login' ? 'bg-[var(--color-accent)] text-[var(--on-accent)]' : 'text-[var(--color-muted)]'}`}
             onClick={() => setMode('login')}
           >
             Anmelden
           </button>
           {!isDemo && (
             <button
-              className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[var(--color-accent)] text-[#04160c]' : 'text-[var(--color-muted)]'}`}
+              className={`rounded-lg py-2 text-sm font-bold ${mode === 'register' ? 'bg-[var(--color-accent)] text-[var(--on-accent)]' : 'text-[var(--color-muted)]'}`}
               onClick={() => setMode('register')}
             >
               Registrieren
@@ -111,7 +111,7 @@ export function AuthPage() {
               />
             </div>
           )}
-          {error && <p className="rounded-lg bg-[rgba(255,93,108,0.12)] px-3 py-2 text-sm text-[#ffb3ba]">{error}</p>}
+          {error && <p className="rounded-lg bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]">{error}</p>}
           <button className="btn btn-primary w-full" disabled={busy}>
             <Target className="h-4 w-4" />
             {busy ? 'einen Moment …' : mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
@@ -121,7 +121,7 @@ export function AuthPage() {
         {mode === 'login' && !isDemo && (
           <div className="mt-4 text-center">
             <button
-              className="text-xs font-semibold text-[#a9b9d4] underline-offset-2 hover:underline"
+              className="text-xs font-semibold text-[var(--muted)] underline-offset-2 hover:underline"
               onClick={() => {
                 setForgot((v) => !v);
                 setForgotPath(null);
@@ -135,8 +135,8 @@ export function AuthPage() {
         )}
 
         {forgot && (
-          <div className="mt-3 space-y-2 rounded-xl border border-[#2c3f5f] bg-[#0f1a2c] p-3">
-            <p className="text-xs text-[#a9b9d4]">
+          <div className="mt-3 space-y-2 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+            <p className="text-xs text-[var(--muted)]">
               Wir schicken dir einen Link zum Zurücksetzen. Ohne Mailserver zeigt die App ihn direkt an.
             </p>
             <input
@@ -163,10 +163,10 @@ export function AuthPage() {
               <MailCheck className="h-4 w-4" /> Link anfordern
             </button>
             {forgotPath === 'gesendet' && (
-              <p className="text-xs text-[#a9b9d4]">Falls es das Konto gibt, ist der Link unterwegs bzw. per Mail versendet.</p>
+              <p className="text-xs text-[var(--muted)]">Falls es das Konto gibt, ist der Link unterwegs bzw. per Mail versendet.</p>
             )}
             {forgotPath && forgotPath !== 'gesendet' && (
-              <a className="block break-all text-xs text-[#3ee383] underline" href={forgotPath}>
+              <a className="block break-all text-xs text-[var(--accent)] underline" href={forgotPath}>
                 {window.location.origin}
                 {forgotPath} — jetzt Passwort setzen
               </a>

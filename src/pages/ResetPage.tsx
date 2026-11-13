@@ -37,16 +37,16 @@ export function ResetPage({ onNavigate }: { onNavigate: (to: string) => void }) 
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="card w-full max-w-sm space-y-3 p-6">
         <div className="flex items-center gap-2">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#3ee383] text-[#04160c]">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent)] text-[var(--on-accent)]">
             <KeyRound className="h-5 w-5" />
           </span>
           <div>
             <h1 className="text-lg font-extrabold">Neues Passwort</h1>
-            <p className="text-xs text-[#a9b9d4]">Der Link ist eine Stunde gültig und nur einmal nutzbar.</p>
+            <p className="text-xs text-[var(--muted)]">Der Link ist eine Stunde gültig und nur einmal nutzbar.</p>
           </div>
         </div>
 
-        {!token && <p className="text-sm text-[#ffb3ba]">Kein gültiger Link — bitte neu anfordern.</p>}
+        {!token && <p className="text-sm text-[var(--danger)]">Kein gültiger Link — bitte neu anfordern.</p>}
 
         <input
           className="input"
@@ -62,12 +62,12 @@ export function ResetPage({ onNavigate }: { onNavigate: (to: string) => void }) 
           value={repeat}
           onChange={(e) => setRepeat(e.target.value)}
         />
-        {error && <p className="text-sm text-[#ffb3ba]">{error}</p>}
-        {message && <p className="text-sm text-[#3ee383]">{message}</p>}
+        {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+        {message && <p className="text-sm text-[var(--accent)]">{message}</p>}
         <button className="btn btn-primary w-full" disabled={busy || !token} onClick={submit}>
           {busy ? 'speichere …' : 'Passwort speichern'}
         </button>
-        <button className="btn w-full !bg-transparent !border-transparent text-xs text-[#a9b9d4]" onClick={() => onNavigate('/')}>
+        <button className="btn w-full !bg-transparent !border-transparent text-xs text-[var(--muted)]" onClick={() => onNavigate('/')}>
           <ArrowLeft className="h-3.5 w-3.5" /> zurück zur Anmeldung
         </button>
       </div>

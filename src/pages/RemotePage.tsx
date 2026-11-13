@@ -45,7 +45,7 @@ export function RemotePage({ matchId, onNavigate }: { matchId: number; onNavigat
   };
 
   if (!state || !active) {
-    return <div className="p-8 text-center text-[#a9b9d4]">{error ?? 'lade …'}</div>;
+    return <div className="p-8 text-center text-[var(--muted)]">{error ?? 'lade …'}</div>;
   }
 
   const lastVisit = state.visits[state.visits.length - 1];
@@ -61,9 +61,9 @@ export function RemotePage({ matchId, onNavigate }: { matchId: number; onNavigat
       </div>
 
       <div className="card p-4 text-center">
-        <p className="text-xs uppercase tracking-widest text-[#a9b9d4]">{active.name}</p>
+        <p className="text-xs uppercase tracking-widest text-[var(--muted)]">{active.name}</p>
         <p className="text-6xl font-black leading-none tabular-nums">{active.remaining}</p>
-        <p className="mt-1 text-xs text-[#a9b9d4]">
+        <p className="mt-1 text-xs text-[var(--muted)]">
           {dartsInVisit}/3 Darts{active.checkoutSuggestion?.[0] ? ` · ${active.checkoutSuggestion[0].label}` : ''}
         </p>
       </div>
@@ -111,11 +111,11 @@ export function RemotePage({ matchId, onNavigate }: { matchId: number; onNavigat
       </div>
 
       {lastVisit && (
-        <p className="text-center text-xs text-[#a9b9d4]">
+        <p className="text-center text-xs text-[var(--muted)]">
           Letzter Zug: {lastVisit.darts.map((d) => dartLabel(d.ring, d.number)).join(' ')} = {lastVisit.bust ? 'Bust' : lastVisit.score}
         </p>
       )}
-      {error && <p className="text-center text-sm text-[#ffb3ba]">{error}</p>}
+      {error && <p className="text-center text-sm text-[var(--danger)]">{error}</p>}
     </div>
   );
 }

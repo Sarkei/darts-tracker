@@ -8,6 +8,12 @@ import { isDemoMode } from './lib/demo';
 
 /** Demo-Zugang: auf demo-*-Domains und mit ?demo=1 wird das Demo-Konto automatisch angemeldet. */
 async function start() {
+  // Designsystem: Start ist dunkel, eine gespeicherte Wahl (hell/dunkel) gewinnt.
+  const savedTheme = localStorage.getItem('darts-theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    document.documentElement.dataset.theme = savedTheme;
+  }
+
   if (isDemoMode() && !getToken()) {
     try {
       const r = await fetch('/api/auth/demo');

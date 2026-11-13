@@ -14,6 +14,15 @@ export function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [pwMessage, setPwMessage] = useState<string | null>(null);
   const [ai, setAi] = useState<{ enabled: boolean; provider: string; model: string } | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() =>
+    document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
+  );
+
+  const applyTheme = (next: 'light' | 'dark') => {
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('darts-theme', next);
+    setTheme(next);
+  };
 
   useEffect(() => {
     void (async () => {
@@ -89,6 +98,21 @@ export function SettingsPage() {
           Passwort ändern
         </button>
         {pwMessage && <p className="text-sm text-[var(--color-muted)]">{pwMessage}</p>}
+      </section>
+
+      <section className="card space-y-3 p-4">
+        <p className="label">Darstellung</p>
+        <div className="flex gap-2">
+          {(['dark', 'light'] as const).map((value) => (
+            <button
+              key={value}
+              className={`btn flex-1 ${theme === value ? 'btn-primary' : ''}`}
+              onClick={() => applyTheme(value)}
+            >
+              {value === 'dark' ? 'Dunkel' : 'Hell'}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="card p-4">

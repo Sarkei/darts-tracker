@@ -71,7 +71,7 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-extrabold">Turnier</h1>
-          <p className="text-sm text-[#a9b9d4]">K.-o.-System, 2 bis 8 Spieler. Sieger rücken automatisch weiter.</p>
+          <p className="text-sm text-[var(--muted)]">K.-o.-System, 2 bis 8 Spieler. Sieger rücken automatisch weiter.</p>
         </div>
         <button className="btn btn-primary !py-2 text-sm" onClick={() => setOpen((v) => !v)}>
           <Trophy className="h-4 w-4" /> Neues Turnier
@@ -88,14 +88,14 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
                 <button
                   key={p.id}
                   className={`flex items-center justify-between rounded-xl border p-2 text-left text-sm ${
-                    on ? 'border-[#3ee383] bg-[#0e3b25]' : 'border-[#2c3f5f]'
+                    on ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--line)]'
                   }`}
                   onClick={() => setSelected((prev) => (on ? prev.filter((x) => x !== p.id) : [...prev, p.id]))}
                 >
                   <span className="flex items-center gap-2">
                     <Avatar value={p.avatar} className="h-4 w-4" /> {p.name}
                   </span>
-                  {on && <span className="text-[#3ee383]">✓</span>}
+                  {on && <span className="text-[var(--accent)]">✓</span>}
                 </button>
               );
             })}
@@ -114,7 +114,7 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-bold">{t.name || 'Turnier'}</p>
-                <p className="text-xs text-[#a9b9d4]">
+                <p className="text-xs text-[var(--muted)]">
                   {new Date(t.createdAt).toLocaleDateString('de-DE')} · {t.status === 'finished' ? 'beendet' : 'läuft'}
                 </p>
               </div>
@@ -132,7 +132,7 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
             </div>
 
             {winner && (
-              <p className="flex items-center gap-2 text-sm font-bold text-[#3ee383]">
+              <p className="flex items-center gap-2 text-sm font-bold text-[var(--accent)]">
                 <Crown className="h-4 w-4" /> Sieger: {winner.name}
               </p>
             )}
@@ -140,7 +140,7 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
             <div className="flex gap-3 overflow-x-auto scroll-x pb-1">
               {Array.from({ length: maxRound }, (_, i) => i + 1).map((round) => (
                 <div key={round} className="min-w-[10rem] flex-1 space-y-2">
-                  <p className="text-[10px] uppercase tracking-widest text-[#a9b9d4]">Runde {round}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-[var(--muted)]">Runde {round}</p>
                   {t.slots
                     .filter((s) => s.round === round)
                     .map((slot) => {
@@ -157,14 +157,14 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
                         <div
                           key={`${slot.round}-${slot.slot}`}
                           className={`rounded-lg border p-2 text-xs ${
-                            won ? 'border-[#3ee383] bg-[#0e3b25]' : 'border-[#2c3f5f] bg-[#16233a]'
+                            won ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--line)] bg-[var(--surface-2)]'
                           }`}
                         >
                           <span className="flex items-center justify-between gap-1">
                             <span className="truncate">{label}</span>
                             {slot.matchId && (
                               <button
-                                className="shrink-0 text-[#3ee383]"
+                                className="shrink-0 text-[var(--accent)]"
                                 onClick={() => onOpenMatch(slot.matchId!)}
                                 title="Match öffnen"
                               >
@@ -183,7 +183,7 @@ export function TournamentPage({ onOpenMatch }: { onOpenMatch: (id: number) => v
       })}
 
       {tournaments.length === 0 && !open && (
-        <div className="card p-6 text-center text-sm text-[#a9b9d4]">
+        <div className="card p-6 text-center text-sm text-[var(--muted)]">
           Noch kein Turnier. „Neues Turnier" wählt Spieler und legt die Paarungen an.
         </div>
       )}
