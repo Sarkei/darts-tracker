@@ -13,6 +13,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import type { MatchSummary, PlayerStats } from '../lib/types';
 import { Band, PageHead, StatRow } from '../components/AppShell';
+import { DetailSheet, StatButton, type DetailDef } from '../components/DetailSheet';
 
 const AREAS = [
   {
@@ -69,6 +70,7 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
   const [matches, setMatches] = useState<MatchSummary[]>([]);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [detail, setDetail] = useState<DetailDef | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -91,11 +93,71 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
   const recent = matches.filter((m) => m.status !== 'active').slice(0, 4);
   const firstName = user?.displayName?.split(' ')[0] ?? 'Spieler';
 
-  const values = [
-    { value: stats ? String(stats.matches) : '0', label: 'Matches' },
-    { value: stats ? String(stats.legs) : '0', label: 'Legs' },
-    { value: stats ? stats.average.toFixed(1).replace('.', ',') : '0,0', label: 'Average' },
-    { value: stats ? `${Math.round(stats.doubleQuote)}%` : '0%', label: 'Doppelquote' },
+  // Jede Kennzahl ist anklickbar und zeigt die passenden Matches
+  const matchZeilen = () =>
+    matches.map((m) => ({
+      label: `${new Date(m.created_at).toLocaleDateString('de-DE')} · ${m.name}`,
+      wert: 1,
+    }));
+
+  const values: { value: string; label: string; detail: DetailDef }[] = [
+    {
+      value: stats ? String(stats.matches) : '0',
+      label: 'Matches',
+      detail: {
+        titel: 'Matches',
+        hinweis: 'Die letzten Matches, neueste zuerst.',
+        hoeherBesser: true,
+        laden: async () => matchZeilen(),
+      },
+    },
+    {
+      value: stats ? String(stats.legs) : '0',
+      label: 'Legs',
+      detail: {
+        titel: 'Legs',
+        hinweis: 'Legs je Match im Verlauf.',
+        hoeherBesser: true,
+        laden: async () => {
+          const res = await api<{ matches: MatchSummary[] }>('/matches?limit=40');
+          return res.matches.map((m) => ({
+            label: `${new Date(m.created_at).toLocaleDateString('de-DE')} · ${m.name}`,
+            wert: m.best_of,
+          }));
+        },
+      },
+    },
+    {
+      value: stats ? stats.average.toFixed(1).replace('.', ',') : '0,0',
+      label: 'Average',
+      detail: {
+        titel: 'Average',
+        hinweis: 'Dein 3-Dart-Average im Vergleich zur Gruppe.',
+        hoeherBesser: true,
+        laden: async () => {
+          const res = await api<{ players: PlayerStats[] }>('/stats');
+          return res.players
+            .map((p) => ({ label: p.name, wert: Math.round(p.average * 10) / 10 }))
+            .sort((a, b) => b.wert - a.wert);
+        },
+      },
+    },
+    {
+      value: stats ? `${Math.round(stats.doubleQuote)}%` : '0%',
+      label: 'Doppelquote',
+      detail: {
+        titel: 'Doppelquote',
+        hinweis: 'Trefferquote auf Doppel im Vergleich zur Gruppe.',
+        einheit: '%',
+        hoeherBesser: true,
+        laden: async () => {
+          const res = await api<{ players: PlayerStats[] }>('/stats');
+          return res.players
+            .map((p) => ({ label: p.name, wert: Math.round(p.doubleQuote) }))
+            .sort((a, b) => b.wert - a.wert);
+        },
+      },
+    },
   ];
 
   return (
@@ -105,7 +167,11 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
         title={`Willkommen zurück, ${firstName}`}
         intro="Matches erfassen, Würfe auswerten und Training planen – alle Zahlen deiner Gruppe an einem Ort."
       >
-        <StatRow items={values} />
+        <dl className="stat-row">
+          {values.map((v) => (
+            <StatButton key={v.label} value={v.value} label={v.label} onClick={() => setDetail(v.detail)} />
+          ))}
+        </dl>
       </PageHead>
 
       <section className="app-section app-container">
@@ -181,6 +247,8 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
           )}
         </div>
       </Band>
+
+      {detail && <DetailSheet def={detail} onClose={() => setDetail(null)} />}
     </>
   );
 }
