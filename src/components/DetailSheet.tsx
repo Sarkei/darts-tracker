@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 
 export type DetailPunkt = { label: string; wert: number; hint?: string };
@@ -189,7 +190,7 @@ export function StatButton(props: {
   onClick: () => void;
 }) {
   const { value, label, onClick } = props;
-  return (
+  const inhalt = (
     <button type="button" onClick={onClick} className="stat group cursor-pointer text-left" title="Details ansehen">
       <dt className="stat__value flex items-center gap-1.5">
         {value}
@@ -198,6 +199,9 @@ export function StatButton(props: {
       <dd className="stat__label">{label}</dd>
     </button>
   );
+
+  // Portal: haengt am <body>, damit der Dialog die Seite nicht verschiebt.
+  return typeof document === 'undefined' ? inhalt : createPortal(inhalt, document.body);
 }
 
 export type { ReactNode };
