@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './lib/auth';
 import { getToken, setToken } from './lib/api';
 import { isDemoMode } from './lib/demo';
+import { starteSichtbareHoehe } from './lib/vvHeight';
 
 /** Demo-Zugang: auf demo-*-Domains und mit ?demo=1 wird das Demo-Konto automatisch angemeldet. */
 async function start() {
@@ -35,6 +36,9 @@ async function start() {
     });
   }
 
+
+// Sichtbare Hoehe als CSS-Variable (Tastatur auf dem Handy).
+starteSichtbareHoehe();
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <AuthProvider>

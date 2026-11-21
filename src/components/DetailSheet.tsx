@@ -89,7 +89,7 @@ export function DetailSheet({ def, onClose }: { def: DetailDef; onClose: () => v
       onClick={onClose}
     >
       <div
-        className="max-h-[92dvh] w-full max-w-xl overflow-hidden rounded-t-[1.75rem] bg-[var(--bg)] shadow-2xl sm:rounded-[1.75rem]"
+        className="max-h-[var(--vv-height,92dvh)] w-full max-w-xl overflow-hidden rounded-t-[1.75rem] bg-[var(--bg)] shadow-2xl sm:rounded-[1.75rem]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] p-4">
@@ -107,7 +107,7 @@ export function DetailSheet({ def, onClose }: { def: DetailDef; onClose: () => v
           </button>
         </div>
 
-        <div className="max-h-[calc(92dvh-4.5rem)] overflow-y-auto p-4">
+        <div className="max-h-[calc(var(--vv-height,92dvh)-4.5rem)] overflow-y-auto p-4">
           {fehler ? (
             <p className="py-6 text-center text-sm text-[var(--danger)]">{fehler}</p>
           ) : !punkte ? (
