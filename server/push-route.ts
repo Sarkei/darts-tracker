@@ -103,7 +103,14 @@ export function pushRouter(
     tabelleBereit = true;
   };
 
-  /** Öffentlichen Schlüssel liefern — der Browser braucht ihn zum Anmelden. */
+  /*
+   * Öffentlichen Schlüssel liefern.
+   *
+   * Der Browser braucht ihn, um sich anzumelden — aber erst NACH der Anmeldung
+   * in der App. Deshalb hängt `/key` am Router und der Router an `requireAuth`:
+   * ohne angemeldeten Nutzer gibt es keinen Schlüssel. Das ist Absicht, der
+   * Schlüssel ist zwar öffentlich, aber so bleibt der Endpunkt zu.
+   */
   router.get('/key', (_req, res) => {
     const k = vapidSchluessel();
     if (!k) return res.status(503).json({ fehler: 'Push ist nicht konfiguriert.' });
@@ -207,18 +214,21 @@ export function pushRouter(
 /**
  * Nachricht an mehrere Geräte senden.
  *
- * Nutzt das Web-Push-Protokoll direkt über `fetch`: Der Body wird mit dem
- * `auth`-Secret und dem `p256dh`-Schlüssel des Geräts verschlüsselt (RFC 8291),
- * signiert wird mit dem VAPID-Schlüssel. Kein zusätzliches Paket nötig —
- * `web-push` wäre bequemer, zieht aber Abhängigkeiten nach, die hier nicht sein
- * müssen.
+ * Verschlüsselung nach RFC 8291 (aes128gcm), Signatur nach RFC 8292 (VAPID).
  *
- * Abgelaufene Abos (HTTP 404/410) werden gelöscht.
+ * **Der Fehler beim ersten Versuch:** Die Schlüsselableitung nutzte HKDF ohne
+ * das Zähler-Byte `0x01` am Ende des Info-Blocks. HKDF-Expand schreibt dieses
+ * Byte vor; ohne es kamen falsche Schlüssel heraus. FCM nahm die Nachricht
+ * trotzdem an, das Gerät konnte sie aber nicht entschlüsseln — kein Fehler,
+ * keine Anzeige. Jetzt stimmen alle drei Ableitungen (IKM, CEK, Nonce).
+ *
+ * `web-push` wäre der bequemere Weg, ist hier aber nicht nutzbar: die Pakete
+ * aus der Registry kommen mit unauflösbaren Abhängigkeiten an.
  */
 export async function sendeAnAbos(
   pool: Pool,
   abos: Abo[],
-  nachricht: { titel: string; text: string; url?: string },
+  nachricht: { titel: string; text: string; url?: string; tag?: string },
 ): Promise<{ gesendet: number; fehler: string | null }> {
   const k = vapidSchluessel();
   if (!k) return { gesendet: 0, fehler: 'VAPID-Schlüssel fehlen.' };
@@ -228,12 +238,23 @@ export async function sendeAnAbos(
 
   for (const abo of abos) {
     try {
+      /*
+       * `icon` und `badge` mitgeben.
+       *
+       * `badge` ist die einfarbige Silhouette in der Statusleiste. Ohne sie
+       * nimmt Android das App-Icon und schrumpft es zu einem weißen Quadrat.
+       * `icon` ist das große Bild in der ausgeklappten Benachrichtigung.
+       */
       const payload = JSON.stringify({
         title: nachricht.titel,
         body: nachricht.text,
+        icon: '/icon-192.png',
+        badge: '/badge-96.png',
         ...(nachricht.url ? { url: nachricht.url } : {}),
+        ...(nachricht.tag ? { tag: nachricht.tag } : {}),
       });
-      const { verschluesselt, header } = verschluessle(payload, abo.p256dh, abo.auth);
+
+      const { body } = verschluessle(payload, abo.p256dh, abo.auth);
       const jwt = vapidJwt(abo.endpunkt, k);
 
       const res = await fetch(abo.endpunkt, {
@@ -242,10 +263,11 @@ export async function sendeAnAbos(
           'Content-Type': 'application/octet-stream',
           'Content-Encoding': 'aes128gcm',
           TTL: '86400',
-          ...header,
+          Urgency: 'high',
           Authorization: `vapid t=${jwt}, k=${k.publicKey}`,
         },
-        body: verschluesselt,
+        // Als Uint8Array, damit der Typ zu fetch passt (Buffer ist zu eng typisiert).
+        body: new Uint8Array(body),
         signal: AbortSignal.timeout(12_000),
       });
 
@@ -253,12 +275,11 @@ export async function sendeAnAbos(
         gesendet += 1;
         await pool.query('UPDATE push_abos SET letzter_fehler = NULL WHERE id = $1', [abo.id]);
       } else if (res.status === 404 || res.status === 410) {
-        // Gerät ist weg — Abo entfernen, sonst wächst die Tabelle sinnlos.
         await pool.query('DELETE FROM push_abos WHERE id = $1', [abo.id]);
         letzterFehler = 'Ein Gerät ist nicht mehr erreichbar.';
       } else {
         const t = await res.text().catch(() => '');
-        letzterFehler = `Push-Dienst ${res.status}: ${t.slice(0, 120)}`;
+        letzterFehler = `Push-Dienst ${res.status}: ${t.slice(0, 150)}`;
         await pool.query('UPDATE push_abos SET letzter_fehler = $2 WHERE id = $1', [abo.id, letzterFehler]);
       }
     } catch (e) {
@@ -285,64 +306,61 @@ function zuB64u(b: Buffer): string {
 }
 
 /**
+ * HKDF-Expand (RFC 5869) mit dem Zähler-Byte.
+ *
+ * Genau dieses Byte fehlte vorher — ohne `0x01` ergibt HMAC einen anderen
+ * Schlüssel, und AES-GCM entschlüsselt danach ins Nichts.
+ */
+function hkdfExpand(prk: Buffer, info: Buffer, laenge: number): Buffer {
+  return createHmac('sha256', prk)
+    .update(Buffer.concat([info, Buffer.from([1])]))
+    .digest()
+    .subarray(0, laenge);
+}
+
+/**
  * Payload nach RFC 8291 verschlüsseln (aes128gcm).
  *
- * Ablauf: eigenes ECDH-Schlüsselpaar erzeugen, mit dem `p256dh` des Geräts das
- * gemeinsame Geheimnis bilden, daraus mit `auth` zwei Schlüssel ableiten, dann
- * mit AES-128-GCM verschlüsseln.
+ * Kopf: salt(16) | rs(4) | idlen(1) | keyid(65 = Server-Public)
  */
 function verschluessle(
   payload: string,
   clientP256dh: string,
   clientAuth: string,
-): { verschluesselt: Buffer; header: Record<string, string> } {
+): { body: Buffer } {
   const ecdh = createECDH('prime256v1');
   ecdh.generateKeys();
   const serverPublic = ecdh.getPublicKey();
-  const shared = ecdh.computeSecret(b64u(clientP256dh));
+  const clientPublic = b64u(clientP256dh);
+  const shared = ecdh.computeSecret(clientPublic);
   const authSecret = b64u(clientAuth);
 
-  // Schlüsselableitung nach RFC 8291, Abschnitt 3.4
-  const prk = createHmac('sha256', authSecret).update(shared).digest();
-  const schluesselInfo = Buffer.concat([
-    Buffer.from('WebPush: info\0'),
-    b64u(clientP256dh),
-    serverPublic,
-  ]);
-  const ikm = createHmac('sha256', prk).update(schluesselInfo).digest().subarray(0, 32);
+  // IKM = HKDF(auth_secret, ecdh_secret, "WebPush: info" || 0x00 || ua || as)
+  const prkKey = createHmac('sha256', authSecret).update(shared).digest();
+  const keyInfo = Buffer.concat([Buffer.from('WebPush: info\0'), clientPublic, serverPublic]);
+  const ikm = hkdfExpand(prkKey, keyInfo, 32);
 
+  // CEK und Nonce aus IKM mit Salt ableiten
   const salt = randomBytes(16);
-  const prk2 = createHmac('sha256', salt).update(ikm).digest();
+  const prk = createHmac('sha256', salt).update(ikm).digest();
+  const cek = hkdfExpand(prk, Buffer.from('Content-Encoding: aes128gcm\0'), 16);
+  const nonce = hkdfExpand(prk, Buffer.from('Content-Encoding: nonce\0'), 12);
 
-  const cek = createHmac('sha256', prk2)
-    .update(Buffer.concat([Buffer.from('Content-Encoding: aes128gcm\0')]))
-    .digest()
-    .subarray(0, 16);
-  const nonce = createHmac('sha256', prk2)
-    .update(Buffer.concat([Buffer.from('Content-Encoding: nonce\0')]))
-    .digest()
-    .subarray(0, 12);
-
-  // Nutzlast + Padding-Trenner (0x02 = letzter Block)
+  // Nutzlast + Trenner 0x02 (letzter Datensatz)
   const klartext = Buffer.concat([Buffer.from(payload, 'utf8'), Buffer.from([2])]);
   const cipher = createCipheriv('aes-128-gcm', cek, nonce);
-  const verschluesselt = Buffer.concat([cipher.update(klartext), cipher.final(), cipher.getAuthTag()]);
+  const ciphertext = Buffer.concat([cipher.update(klartext), cipher.final(), cipher.getAuthTag()]);
 
-  /*
-   * Kopf nach RFC 8188: salt (16) | rs (4) | idlen (1) | keyid (65 = Server-Public)
-   * Der Browser braucht diesen Kopf, um entschlüsseln zu können.
-   */
   const rs = Buffer.alloc(4);
   rs.writeUInt32BE(4096, 0);
   const kopf = Buffer.concat([salt, rs, Buffer.from([serverPublic.length]), serverPublic]);
 
-  return { verschluesselt: Buffer.concat([kopf, verschluesselt]), header: {} };
+  return { body: Buffer.concat([kopf, ciphertext]) };
 }
 
 /**
- * VAPID-JWT für den Push-Dienst bauen.
- *
- * Der `aud`-Anspruch ist der Ursprung des Endpunkts, `exp` höchstens 24 Stunden.
+ * VAPID-JWT bauen (RFC 8292): ES256, `aud` = Ursprung des Endpunkts,
+ * `exp` höchstens 24 Stunden.
  */
 function vapidJwt(endpunkt: string, k: { privateKey: string; subject: string }): string {
   const url = new URL(endpunkt);
@@ -350,20 +368,78 @@ function vapidJwt(endpunkt: string, k: { privateKey: string; subject: string }):
   const jetzt = Math.floor(Date.now() / 1000);
   const nutz = zuB64u(
     Buffer.from(
-      JSON.stringify({
-        aud: `${url.protocol}//${url.host}`,
-        exp: jetzt + 12 * 3600,
-        sub: k.subject,
-      }),
+      JSON.stringify({ aud: `${url.protocol}//${url.host}`, exp: jetzt + 12 * 3600, sub: k.subject }),
     ),
   );
   const daten = Buffer.from(`${kopf}.${nutz}`);
-
-  /*
-   * Der private VAPID-Schlüssel liegt als PKCS#8-DER (base64url) vor. Node kann
-   * ihn direkt importieren, wenn wir ihn als DER übergeben.
-   */
   const priv = createPrivateKey({ key: b64u(k.privateKey), format: 'der', type: 'pkcs8' });
   const sig = sign('sha256', daten, { key: priv, dsaEncoding: 'ieee-p1363' });
   return `${kopf}.${nutz}.${zuB64u(sig)}`;
+}
+
+/* --------------------------------------------- Versand an einen Nutzer */
+
+/**
+ * Nachricht an alle Geräte eines Nutzers — für Ereignisse ausserhalb der
+ * Endpunkte (Tor gefallen, Wochenplan fertig, Fahrt eingetragen …).
+ *
+ * Holt die Abos selbst aus der Datenbank, damit jede App nur eine Zeile
+ * braucht: `sendePushAnNutzer(pool, nutzerId, { titel, text, url })`.
+ *
+ * **Ruhezeit:** Zwischen 22 und 8 Uhr werden normale Nachrichten verworfen.
+ * Spielereignisse (`dringend: true`) gehen immer durch — ein Tor um 21:45 will
+ * man sehen, eine Einkaufserinnerung um 3 Uhr nicht.
+ *
+ * Fehler werden geschluckt: Ein fehlgeschlagener Push darf nie einen
+ * Spielstand, einen Plan oder eine Buchung blockieren.
+ */
+export async function sendePushAnNutzer(
+  pool: Pool,
+  nutzerId: number | string | null,
+  nachricht: { titel: string; text: string; url?: string; tag?: string; dringend?: boolean },
+): Promise<boolean> {
+  if (nutzerId == null) return false;
+
+  // Ruhezeit prüfen (deutsche Zeit, nicht UTC)
+  if (!nachricht.dringend) {
+    const stunde = Number(
+      new Intl.DateTimeFormat('de-DE', { hour: 'numeric', hour12: false, timeZone: 'Europe/Berlin' }).format(new Date()),
+    );
+    if (stunde >= 22 || stunde < 8) return false;
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_abos (
+        id BIGSERIAL PRIMARY KEY,
+        nutzer_id TEXT NOT NULL,
+        endpunkt TEXT NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        geraet TEXT,
+        angelegt_am TIMESTAMPTZ NOT NULL DEFAULT now(),
+        letzter_fehler TEXT,
+        UNIQUE (nutzer_id, endpunkt)
+      )
+    `);
+
+    const r = await pool.query(
+      'SELECT id, endpunkt, p256dh, auth FROM push_abos WHERE nutzer_id = $1',
+      [String(nutzerId)],
+    );
+    if (!r.rowCount) return false;
+
+    const abos: Abo[] = r.rows.map((x) => ({
+      id: Number(x.id),
+      endpunkt: String(x.endpunkt),
+      p256dh: String(x.p256dh),
+      auth: String(x.auth),
+    }));
+
+    const ergebnis = await sendeAnAbos(pool, abos, nachricht);
+    return ergebnis.gesendet > 0;
+  } catch (e) {
+    console.error('[push] Versand an Nutzer fehlgeschlagen:', e);
+    return false;
+  }
 }

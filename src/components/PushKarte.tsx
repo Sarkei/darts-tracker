@@ -50,12 +50,17 @@ function faehigkeit(): { moeglich: boolean; grund?: string } {
   return { moeglich: true };
 }
 
-/** Base64url → Uint8Array (für `applicationServerKey`). */
-function schluesselAlsBytes(b64: string): Uint8Array {
+/**
+ * Base64url → Bytes für `applicationServerKey`.
+ *
+ * Der Cast auf `BufferSource` ist nötig, weil sich die Typdefinition von
+ * `applicationServerKey` zwischen TypeScript-Versionen unterscheidet.
+ */
+function schluesselAlsBytes(b64: string): BufferSource {
   const roh = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
   const arr = new Uint8Array(roh.length);
   for (let i = 0; i < roh.length; i += 1) arr[i] = roh.charCodeAt(i);
-  return arr;
+  return arr as unknown as BufferSource;
 }
 
 export default function PushKarte({

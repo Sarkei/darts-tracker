@@ -6,6 +6,8 @@ import { loadMatchState, persistDerived, dartPoints, checkoutRoutes, type Ring }
 import { broadcast } from './events.js';
 import { matchRole, requireMatchAccess } from './access.js';
 import { syncTournamentForMatch } from './tournaments.js';
+import { sendePushAnNutzer } from './push-route.js';
+import { pool } from './db.js';
 
 export const matchesRouter = Router();
 
@@ -82,6 +84,33 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
   }
   const state = await loadMatchState(matchId);
   broadcast(matchId, 'match', { action: 'created' });
+
+  /*
+   * Mitspieler benachrichtigen — der Ersteller weiss es schon.
+   *
+   * Ein Spiel wird oft von einer Person angelegt, während die anderen am Tisch
+   * sitzen oder noch unterwegs sind.
+   */
+  for (const spielerId of unique) {
+    if (Number(spielerId) === Number(req.userId)) continue;
+    try {
+      const r = await query<{ user_id: number | null }>(
+        'select user_id from players where id = $1 limit 1',
+        [spielerId],
+      );
+      const zielNutzer = r.rows[0]?.user_id;
+      if (!zielNutzer) continue;
+      void sendePushAnNutzer(pool, zielNutzer, {
+        titel: 'Neues Spiel angelegt',
+        text: `${state?.match?.name || 'Ein Spiel'} wartet — du spielst mit.`,
+        url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
+        tag: `spiel-${matchId}`,
+      }).catch(() => undefined);
+    } catch {
+      /* einzelner Spieler darf die Anlage nicht blockieren */
+    }
+  }
+
   res.status(201).json(state);
 });
 
