@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
-import { initDb, query } from './db.js';
+import { initDb, query, pool } from './db.js';
 import { authRouter, requireAuth } from './auth.js';
 import { playersRouter } from './players.js';
 import { matchesRouter, watchRouter } from './matches.js';
@@ -11,6 +11,7 @@ import { tournamentsRouter } from './tournaments.js';
 import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
 import { devicesRouter } from './devices.js';
+import { pushoverRouter } from './pushover-route.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -30,6 +31,18 @@ app.get('/api/health', async (_req, res) => {
     res.status(503).json({ status: 'degraded', db: 'error', message: e instanceof Error ? e.message : 'unbekannt' });
   }
 });
+
+/*
+ * Pushover: Zugang hinterlegen, testen, trennen.
+ */
+app.use(
+  '/api/integrations/pushover',
+  requireAuth,
+  pushoverRouter(pool as never, (req) => (req as { userId?: number }).userId ?? null, {
+    titel: 'Darts-Tracker',
+    text: 'Wenn du das siehst, funktionieren deine Benachrichtigungen.',
+  }),
+);
 
 app.use('/api/auth', authRouter);
 app.use('/api/events', eventsRouter);

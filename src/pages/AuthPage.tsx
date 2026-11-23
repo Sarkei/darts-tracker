@@ -48,7 +48,7 @@ export function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="auth-seite">
       <div className="card w-full max-w-sm p-6">
         <div className="mb-5 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-accent)] text-[var(--on-accent)]">

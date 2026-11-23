@@ -61,8 +61,12 @@ const SECTIONS: Record<string, string> = {
 export default function App() {
   const { user, loading, logout } = useAuth();
   const [route, setRoute] = useState(currentRoute());
+  /*
+   * Standard ist dunkel — das passt zum Rest der Apps und ist im Dartskeller
+   * angenehmer. Hell bleibt über den Umschalter erreichbar.
+   */
   const [theme, setTheme] = useState<ThemeName>(() =>
-    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
+    document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
   );
 
   useEffect(() => {

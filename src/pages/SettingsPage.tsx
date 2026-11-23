@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { Avatar } from '../components/Avatar';
 import { useAuth } from '../lib/auth';
+import PushoverKarte from '../components/PushoverKarte';
 
 const AVATARS = ['🎯', '🔥', '⚡', '🏆', '🦅', '🐺', '🍀', '🎱', '🧊', '🎪'];
 
@@ -123,6 +124,9 @@ export function SettingsPage() {
             : 'Kein API-Key hinterlegt. Analysen sind deaktiviert.'}
         </p>
       </section>
+
+      {/* Pushover: Benachrichtigungen aufs Handy */}
+      <PushoverKarte beschreibung="Pushover schickt dir eine Nachricht, wenn ein Turnier startet oder ein Spiel eingetragen ist. Beide Werte stehen in deinem Pushover-Konto." />
 
       <section className="card p-4 text-sm text-[var(--color-muted)]">
         <p className="label">Über</p>

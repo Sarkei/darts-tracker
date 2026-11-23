@@ -558,3 +558,60 @@ body {
   font-size: 14px;
 }
 
+
+/* ------------------------------------------------------------ Login / Auth */
+
+/*
+ * Login-Seiten waren vertikal zentriert auf voller Fensterhöhe
+ * (`min-h-screen items-center justify-center`). Klappt auf dem Handy die
+ * Tastatur auf, schrumpft der sichtbare Bereich — der Inhalt bleibt zentriert
+ * und rutscht oben und unten aus dem Bild. Die Eingabefelder sind dann weg.
+ *
+ * Lösung: Container oben ausrichten und nur bei genug Platz zentrieren.
+ * `100dvh` statt `100vh`, weil die Browserleiste auf dem Handy sonst mitzählt.
+ */
+.auth-seite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100dvh;
+  padding: 28px 16px;
+  overflow-y: auto;
+  /* Kein Springen, wenn die Tastatur Platz wegnimmt */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Erst ab genug Höhe zentrieren — dann ist auch keine Tastatur im Weg */
+@media (min-height: 620px) {
+  .auth-seite { justify-content: center; }
+}
+
+/*
+ * Tastatur offen: die Seite ist dann deutlich niedriger als das Gerät. Ab hier
+ * immer oben ausrichten und die Polsterung verkleinern, damit das erste Feld
+ * direkt sichtbar ist.
+ */
+@media (max-height: 500px) {
+  .auth-seite {
+    justify-content: flex-start;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .auth-seite__kopf { margin-bottom: 14px; }
+}
+
+/* Eingabefelder beim Fokus sichtbar halten, auch wenn die Tastatur schiebt */
+.auth-seite input:focus,
+.auth-seite select:focus,
+.auth-seite textarea:focus {
+  scroll-margin-top: 20px;
+  scroll-margin-bottom: 90px;
+}
+
+/* Einheitliche Mindesthöhe der Felder (44px = bequem mit dem Daumen) */
+.auth-seite input,
+.auth-seite select {
+  min-height: 44px;
+  font-size: 16px; /* verhindert das automatische Hineinzoomen auf iOS */
+}
