@@ -764,3 +764,26 @@ body {
   .app-table thead th { padding: 7px 5px; font-size: 8.5px; }
   .app-table tbody td { padding: 8px 5px; }
 }
+
+/* ------------------------------------------- Kleine Bedienelemente (mobil) */
+
+/*
+ * Sprachumschalter, Textlinks und Reiter auf Login-Seiten lagen bei 14-31px.
+ * Auf dem Handy trifft man die mit dem Daumen schlecht. Diese Regel hebt sie
+ * auf mindestens 40px, ohne das Aussehen zu verändern.
+ */
+@media (max-width: 639px) {
+  .auth-seite button,
+  .auth-seite a,
+  .auth-seite [role='button'] {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Reine Textlinks dürfen flacher bleiben, brauchen aber Polster */
+  .auth-seite a:not([class*='rounded']) {
+    min-height: 36px;
+    padding-block: 6px;
+  }
+}
