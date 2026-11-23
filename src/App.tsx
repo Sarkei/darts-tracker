@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from './components/AppShell';
 import { useAuth } from './lib/auth';
+import { prefetchBereiche } from './lib/api';
 import { AuthPage } from './pages/AuthPage';
 import { HomePage } from './pages/HomePage';
 import { NewMatchPage } from './pages/NewMatchPage';
@@ -69,6 +70,12 @@ export default function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Bereiche einmal im Hintergrund laden, damit Tab-Wechsel ohne Wartezeit laufen.
+  useEffect(() => {
+    if (!user) return;
+    void prefetchBereiche();
+  }, [user]);
 
   // Theme-Umschaltung: Attribut auf <html>, Wahl in localStorage
   useEffect(() => {
