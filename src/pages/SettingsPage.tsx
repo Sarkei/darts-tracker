@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Avatar } from '../components/Avatar';
 import { useAuth } from '../lib/auth';
 import PushoverKarte from '../components/PushoverKarte';
+import PushKarte from '../components/PushKarte';
 
 const AVATARS = ['🎯', '🔥', '⚡', '🏆', '🦅', '🐺', '🍀', '🎱', '🧊', '🎪'];
 
@@ -126,6 +127,8 @@ export function SettingsPage() {
       </section>
 
       {/* Pushover: Benachrichtigungen aufs Handy */}
+      <PushKarte beschreibung="Nachrichten aufs Handy, auch wenn die App geschlossen ist." />
+      
       <PushoverKarte beschreibung="Pushover schickt dir eine Nachricht, wenn ein Turnier startet oder ein Spiel eingetragen ist. Beide Werte stehen in deinem Pushover-Konto." />
 
       <section className="card p-4 text-sm text-[var(--color-muted)]">

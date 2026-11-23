@@ -12,6 +12,7 @@ import { aiRouter } from './ai.js';
 import { eventsRouter } from './events.js';
 import { devicesRouter } from './devices.js';
 import { pushoverRouter } from './pushover-route.js';
+import { pushRouter } from './push-route.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -42,6 +43,16 @@ app.use(
     titel: 'Darts-Tracker',
     text: 'Wenn du das siehst, funktionieren deine Benachrichtigungen.',
   }),
+);
+
+/*
+ * Web Push: Gerät anmelden, abmelden, testen.
+ * Läuft parallel zu Pushover.
+ */
+app.use(
+  '/api/push',
+  requireAuth,
+  pushRouter(pool as never, (req) => (req as { userId?: number }).userId ?? null, 'Darts-Tracker'),
 );
 
 app.use('/api/auth', authRouter);
