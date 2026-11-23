@@ -718,3 +718,51 @@ body {
     min-height: 40px;
   }
 }
+
+/* ------------------------------------------------- Mobile Normalisierung */
+
+/*
+ * Maßstab ist der Fitness-Tracker (Tims Vorgabe: „ui technisch perfekt").
+ *
+ * Die anderen Apps hatten größere Innenabstände und Schriftgrößen. Auf einem
+ * 390-px-Handy wirkt das gequetscht, weil weniger Inhalt auf den Schirm passt.
+ *
+ * Diese Regeln setzen die Werte des Fitness-Trackers zentral: kompakte Karten,
+ * kleinere Überschriften, engere Abstände. Nur auf schmalen Geräten, damit
+ * Desktop unberührt bleibt.
+ */
+@media (max-width: 639px) {
+  /* Karten: 20px statt 24-28px Innenabstand */
+  .app-card,
+  .card,
+  [class*='rounded-2xl'][class*='p-6'],
+  [class*='rounded-2xl'][class*='p-7'],
+  [class*='rounded-3xl'] {
+    padding: 16px;
+  }
+
+  /* Größere Rundungen auf das Maß des Fitness-Trackers (16px) */
+  [class*='rounded-3xl'] {
+    border-radius: 16px;
+  }
+
+  /* Überschriften: der Fitness-Tracker nutzt 20-22px Seiten, 10px Labels */
+  .app-title,
+  h1 {
+    font-size: 24px;
+    line-height: 1.15;
+  }
+  .app-section-title,
+  h2 {
+    font-size: 15px;
+  }
+
+  /* Zu großzügige Abstände zusammenziehen */
+  .space-y-6 > * + * { margin-top: 16px; }
+  .space-y-5 > * + * { margin-top: 14px; }
+
+  /* Tabellen: kleinere Schrift, engere Zellen */
+  .app-table { font-size: 11.5px; }
+  .app-table thead th { padding: 7px 5px; font-size: 8.5px; }
+  .app-table tbody td { padding: 8px 5px; }
+}
