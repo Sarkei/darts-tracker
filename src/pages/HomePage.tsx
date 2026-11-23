@@ -215,7 +215,7 @@ export function HomePage({ onNavigate }: { onNavigate: (to: string) => void }) {
                   läuft · {m.start_score} · Best of {m.best_of} · {legsLabel(m.legs_played)}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5 text-[13px] text-[var(--accent)]">
+              <span className="flex shrink-0 items-center gap-1.5 text-[12px] text-[var(--accent)]">
                 fortsetzen <Play className="h-4 w-4" />
               </span>
             </button>

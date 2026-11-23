@@ -6,7 +6,7 @@ import { loadMatchState, persistDerived, dartPoints, checkoutRoutes, type Ring }
 import { broadcast } from './events.js';
 import { matchRole, requireMatchAccess } from './access.js';
 import { syncTournamentForMatch } from './tournaments.js';
-import { sendePushAnNutzer } from './push-route.js';
+import { sendePushAnNutzer, sendeEreignis } from './push-route.js';
 import { pool } from './db.js';
 
 export const matchesRouter = Router();
@@ -227,6 +227,61 @@ matchesRouter.post('/:id/visits/end', requireMatchAccess, async (req: AuthReques
   const next = await loadMatchState(matchId);
   if (next) await persistDerived(matchId, next);
   broadcast(matchId, 'visit', { action: 'ended' });
+
+  /*
+   * Benachrichtigungen zum Spiel.
+   *
+   * Drei Anlässe:
+   *   1. **180** — der Wurf, über den in jeder Runde geredet wird.
+   *   2. **Checkout** — das Spiel ist entschieden.
+   *   3. Nur an die Mitspieler, nicht an den Werfer selbst.
+   */
+  try {
+    const summe = lastVisit.darts.reduce((a, d) => a + (d.points ?? 0), 0);
+    const mitspieler = next?.players ?? [];
+    for (const p of mitspieler) {
+      /*
+       * PlayerState kennt keine User-ID — die steht in `players.owner_id`.
+       * Gäste haben `null` und bekommen nichts.
+       */
+      const eig = await query<{ owner_id: number | null }>(
+        'select owner_id from players where id = $1 limit 1',
+        [p.playerId],
+      );
+      const uid = eig.rows[0]?.owner_id;
+      if (!uid) continue;
+
+      const eigenerSpieler = await query<{ owner_id: number | null }>(
+        'select owner_id from players where id = $1 limit 1',
+        [current.playerId],
+      );
+      if (Number(uid) === Number(eigenerSpieler.rows[0]?.owner_id ?? -1)) continue;
+
+      // 180
+      if (summe === 180) {
+        void sendeEreignis(pool, uid, 'darts-180', `${matchId}-${lastVisit.id}`, {
+          titel: '180!',
+          text: `${current.name} wirft die maximale Aufnahme.`,
+          url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
+          tag: `match-${matchId}`,
+        }).catch(() => undefined);
+      }
+
+      // Spiel beendet
+      if (next?.finished) {
+        const sieger = next.players.find((x) => x.legsWon === Math.max(...next.players.map((y) => y.legsWon)));
+        void sendeEreignis(pool, uid, 'darts-ende', String(matchId), {
+          titel: 'Spiel beendet',
+          text: `${sieger?.name ?? 'Jemand'} gewinnt${next.match?.name ? ` — ${next.match.name}` : ''}.`,
+          url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
+          tag: `match-${matchId}`,
+        }).catch(() => undefined);
+      }
+    }
+  } catch {
+    /* Benachrichtigung darf das Spiel nicht blockieren */
+  }
+
   res.json(next);
 });
 

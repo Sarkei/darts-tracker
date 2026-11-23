@@ -443,3 +443,85 @@ export async function sendePushAnNutzer(
     return false;
   }
 }
+
+/* ------------------------------------ Ereignisse (gegen Doppelversand) */
+
+/**
+ * Wurde dieses Ereignis für diesen Nutzer schon verschickt?
+ *
+ * **Warum nötig:** Die Prüf-Takte laufen im Minutentakt. Ohne Gedächtnis würde
+ * derselbe Sachverhalt („Training steht aus", „Spiel beginnt") immer wieder
+ * gemeldet, bis die Bedingung nicht mehr zutrifft. Deshalb merkt sich die
+ * App je Nutzer, Ereignis und Schlüssel, was schon raus ist.
+ *
+ * Schlüssel ist meist das Datum (`2026-11-24`) oder eine Spiel-ID — so kann
+ * dasselbe Ereignis am nächsten Tag erneut kommen.
+ */
+export async function ereignisSchonGemeldet(
+  pool: Pool,
+  nutzerId: number | string,
+  ereignis: string,
+  schluessel: string,
+): Promise<boolean> {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_ereignisse (
+        nutzer_id TEXT NOT NULL,
+        ereignis TEXT NOT NULL,
+        schluessel TEXT NOT NULL,
+        gemeldet_am TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (nutzer_id, ereignis, schluessel)
+      )
+    `);
+    const r = await pool.query(
+      'SELECT 1 FROM push_ereignisse WHERE nutzer_id = $1 AND ereignis = $2 AND schluessel = $3',
+      [String(nutzerId), ereignis, schluessel],
+    );
+    return Boolean(r.rowCount);
+  } catch {
+    // Im Zweifel nicht blockieren — lieber doppelt als gar nicht.
+    return false;
+  }
+}
+
+/** Ereignis als gemeldet vermerken. */
+export async function ereignisMerken(
+  pool: Pool,
+  nutzerId: number | string,
+  ereignis: string,
+  schluessel: string,
+): Promise<void> {
+  try {
+    await pool.query(
+      `INSERT INTO push_ereignisse (nutzer_id, ereignis, schluessel)
+       VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`,
+      [String(nutzerId), ereignis, schluessel],
+    );
+  } catch {
+    /* egal — beim nächsten Lauf erneut versuchen */
+  }
+}
+
+/**
+ * Ereignis senden — nur, wenn es noch nicht gemeldet wurde.
+ *
+ * Bequemer Einzeiler für die Aufrufer:
+ *   await sendeEreignis(pool, userId, 'traegt-aus', datum, { titel, text })
+ *
+ * Gibt `true` zurück, wenn tatsächlich gesendet wurde.
+ */
+export async function sendeEreignis(
+  pool: Pool,
+  nutzerId: number | string | null,
+  ereignis: string,
+  schluessel: string,
+  nachricht: { titel: string; text: string; url?: string; tag?: string; dringend?: boolean },
+): Promise<boolean> {
+  if (nutzerId == null) return false;
+  if (await ereignisSchonGemeldet(pool, nutzerId, ereignis, schluessel)) return false;
+
+  const ok = await sendePushAnNutzer(pool, nutzerId, nachricht);
+  // Auch bei fehlendem Gerät merken — sonst wird bei jedem Takt neu versucht.
+  await ereignisMerken(pool, nutzerId, ereignis, schluessel);
+  return ok;
+}

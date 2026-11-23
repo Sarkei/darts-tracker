@@ -182,7 +182,14 @@ export function DetailSheet({ def, onClose }: { def: DetailDef; onClose: () => v
   );
 }
 
-/** Klickbare Kennzahl-Kachel (Ergänzung zu StatRow). */
+/**
+ * Klickbare Kennzahl-Kachel.
+ *
+ * **Kein Portal.** Diese Kachel gehört in die `stat-row`-Leiste und muss am
+ * Grid teilnehmen. Ein `createPortal` an `<body>` hängte sie aus dem Layout
+ * heraus — sie erschien dann als frei schwebende Zahl über den Karten
+ * darunter. Das Portal-Muster gehört nur in den Dialog (`DetailSheet`).
+ */
 export function StatButton(props: {
   key?: string | number;
   value: string;
@@ -190,7 +197,7 @@ export function StatButton(props: {
   onClick: () => void;
 }) {
   const { value, label, onClick } = props;
-  const inhalt = (
+  return (
     <button type="button" onClick={onClick} className="stat group cursor-pointer text-left" title="Details ansehen">
       <dt className="stat__value flex items-center gap-1.5">
         {value}
@@ -199,9 +206,6 @@ export function StatButton(props: {
       <dd className="stat__label">{label}</dd>
     </button>
   );
-
-  // Portal: haengt am <body>, damit der Dialog die Seite nicht verschiebt.
-  return typeof document === 'undefined' ? inhalt : createPortal(inhalt, document.body);
 }
 
 export type { ReactNode };

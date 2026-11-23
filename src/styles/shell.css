@@ -229,15 +229,22 @@
 
 @media (min-width: 640px) { .stat-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
+/*
+ * Kennzahl-Kacheln — Maße vom Fitness-Tracker (Tims Referenz): 14px Polster,
+ * 22px Wert, 10px Label. Vorher 20px Polster und 30px Wert: auf dem Handy
+ * nahm die Leiste damit fast den halben Schirm ein.
+ */
 .stat {
   background: var(--surface);
-  padding: 20px;
+  padding: 12px 14px;
 }
 
 .stat__value {
-  font-family: var(--font-serif);
-  font-size: 30px;
-  line-height: 1;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat__label {
@@ -296,7 +303,9 @@
   font-family: var(--font-serif);
   font-weight: 400;
   font-size: 20px;
-  margin: 16px 0 6px;
+  /* 16px oben war zu viel: mit dem 16px-Kartenpolster entstand eine Lücke,
+     die die Karte hochzog. 10px passt zum Fitness-Tracker. */
+  margin: 10px 0 4px;
 }
 
 .app-card__text { font-size: 14px; line-height: 1.6; color: var(--muted); }

@@ -732,18 +732,16 @@ body {
  * Desktop unberührt bleibt.
  */
 @media (max-width: 639px) {
-  /* Karten: 20px statt 24-28px Innenabstand */
+  /*
+   * Karten: 16px Innenabstand wie im Fitness-Tracker.
+   *
+   * Bewusst NUR die Karten-Klassen. Ein Selektor wie `[class*='rounded-3xl']`
+   * traf auch runde Logos und Pill-Knöpfe und machte aus Kreisen Quadrate mit
+   * runden Ecken — das war der „verzogene" Eindruck.
+   */
   .app-card,
-  .card,
-  [class*='rounded-2xl'][class*='p-6'],
-  [class*='rounded-2xl'][class*='p-7'],
-  [class*='rounded-3xl'] {
+  .card {
     padding: 16px;
-  }
-
-  /* Größere Rundungen auf das Maß des Fitness-Trackers (16px) */
-  [class*='rounded-3xl'] {
-    border-radius: 16px;
   }
 
   /* Überschriften: der Fitness-Tracker nutzt 20-22px Seiten, 10px Labels */
