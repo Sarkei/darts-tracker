@@ -615,3 +615,106 @@ body {
   min-height: 44px;
   font-size: 16px; /* verhindert das automatische Hineinzoomen auf iOS */
 }
+
+/* ------------------------------------------------- Bottom-Tab-Leiste (mobil) */
+
+/*
+ * Einheitliche Leiste am unteren Rand — wie beim Fitness-Tracker.
+ *
+ * Die anderen Apps hatten bisher nur ein Ausklapp-Menü oben rechts. Damit
+ * scrollte die Navigation weg und man musste zwei Schritte gehen, um den
+ * Bereich zu wechseln. Jetzt klebt die Leiste unten und zeigt die wichtigsten
+ * Bereiche direkt.
+ *
+ * `env(safe-area-inset-bottom)` hält Abstand zum Home-Indikator des Geräts.
+ */
+.bt-bottom-tabs {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Auf grossen Bildschirmen übernimmt die Kopfzeilen-Navigation */
+@media (min-width: 1024px) {
+  .bt-bottom-tabs { display: none; }
+}
+
+.bt-bottom-tabs__inner {
+  display: flex;
+  flex: 1;
+  margin: 0 auto;
+  max-width: 28rem;
+}
+
+.bt-bottom-tabs a,
+.bt-bottom-tabs button {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px 9px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 120ms ease;
+}
+
+.bt-bottom-tabs a.is-active,
+.bt-bottom-tabs button.is-active {
+  color: var(--accent);
+}
+
+/* Platz, damit der Inhalt nicht unter der Leiste verschwindet */
+@media (max-width: 1023px) {
+  .bt-hat-bottom-tabs { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ------------------------------------------------------ Touch-Ziele (mobil) */
+
+/*
+ * Auf dem Handy braucht jedes antippbare Element mindestens 44 px Höhe.
+ * Darunter trifft man daneben — besonders mit dem Daumen.
+ *
+ * Die Kader-Zeilen und Tabellenzeilen lagen bei 31 px, weil die Polsterung
+ * (py-2.5 = 10px) zu klein war. Diese Regel setzt die Mindesthöhe zentral,
+ * statt jeden Aufruf einzeln anzupassen.
+ */
+@media (max-width: 1023px) {
+  /* Zeilen in Listen, die als Ganzes antippbar sind */
+  a.flex.items-center,
+  button.flex.items-center,
+  li > a,
+  li > button {
+    min-height: 44px;
+  }
+
+  /* Tabellenzeilen, die auf eine Detailseite führen */
+  tr[onclick],
+  tr.cursor-pointer {
+    min-height: 44px;
+  }
+  tr[onclick] td,
+  tr.cursor-pointer td {
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+
+  /* Kleine Aktionsknöpfe nicht unter 40 px */
+  .app-tab,
+  nav a,
+  nav button {
+    min-height: 40px;
+  }
+}

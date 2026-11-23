@@ -24,7 +24,7 @@ self.addEventListener('activate', (event) => {
  * Der Server schickt JSON mit `title`, `body` und optional `url`.
  */
 self.addEventListener('push', (event) => {
-  let daten = { title: 'Benachrichtigung', body: '', url: '/' };
+  let daten = { title: 'Benachrichtigung', body: '', url: '/', icon: '/icon-192.png', badge: '/badge-96.png' };
   try {
     if (event.data) daten = { ...daten, ...event.data.json() };
   } catch {
@@ -32,11 +32,17 @@ self.addEventListener('push', (event) => {
     if (event.data) daten.body = event.data.text();
   }
 
+  /*
+   * `badge` MUSS eine einfarbige Silhouette als PNG mit Transparenz sein.
+   * Ohne gültiges Badge fällt Android auf das App-Icon zurück und schrumpft es
+   * zu einem weißen Quadrat — bei mehreren Apps sieht man dann nur Kästen und
+   * kann nicht zuordnen, welche App die Nachricht geschickt hat.
+   */
   event.waitUntil(
     self.registration.showNotification(daten.title, {
       body: daten.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: daten.icon,
+      badge: daten.badge,
       // Ein Tag pro Nachrichtentyp: gleiche Nachrichten ersetzen sich,
       // statt sich zu stapeln.
       tag: daten.tag || 'allgemein',
