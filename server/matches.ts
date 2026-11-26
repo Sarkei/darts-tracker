@@ -7,7 +7,14 @@ import { broadcast } from './events.js';
 import { matchRole, requireMatchAccess } from './access.js';
 import { syncTournamentForMatch } from './tournaments.js';
 import { sendePushAnNutzer, sendeEreignis } from './push-route.js';
+import { benachrichtige } from './benachrichtigungen.js';
 import { pool } from './db.js';
+
+/** Versand an einen Nutzer in der Form, die `benachrichtige` erwartet. */
+const sendeAn =
+  (nutzerId: number | string) =>
+  (n: { titel: string; text: string; url?: string; tag?: string; dringend?: boolean }) =>
+    sendePushAnNutzer(pool, nutzerId, n);
 
 export const matchesRouter = Router();
 
@@ -100,7 +107,10 @@ matchesRouter.post('/', async (req: AuthRequest, res) => {
       );
       const zielNutzer = r.rows[0]?.user_id;
       if (!zielNutzer) continue;
-      void sendePushAnNutzer(pool, zielNutzer, {
+      void benachrichtige(pool, sendeAn(zielNutzer), zielNutzer, {
+        kategorie: 'wettkampf',
+        ereignis: 'spiel-angelegt',
+        schluessel: String(matchId),
         titel: 'Neues Spiel angelegt',
         text: `${state?.match?.name || 'Ein Spiel'} wartet — du spielst mit.`,
         url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
@@ -259,22 +269,30 @@ matchesRouter.post('/:id/visits/end', requireMatchAccess, async (req: AuthReques
 
       // 180
       if (summe === 180) {
-        void sendeEreignis(pool, uid, 'darts-180', `${matchId}-${lastVisit.id}`, {
+        void benachrichtige(pool, sendeAn(uid), uid, {
+          kategorie: 'wettkampf',
+          ereignis: 'darts-180',
+          schluessel: `${matchId}-${lastVisit.id}`,
           titel: '180!',
           text: `${current.name} wirft die maximale Aufnahme.`,
           url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
           tag: `match-${matchId}`,
+          dringend: true,
         }).catch(() => undefined);
       }
 
       // Spiel beendet
       if (next?.finished) {
         const sieger = next.players.find((x) => x.legsWon === Math.max(...next.players.map((y) => y.legsWon)));
-        void sendeEreignis(pool, uid, 'darts-ende', String(matchId), {
+        void benachrichtige(pool, sendeAn(uid), uid, {
+          kategorie: 'wettkampf',
+          ereignis: 'darts-ende',
+          schluessel: String(matchId),
           titel: 'Spiel beendet',
           text: `${sieger?.name ?? 'Jemand'} gewinnt${next.match?.name ? ` — ${next.match.name}` : ''}.`,
           url: `https://darts.nas-timgreen.com/#/match/${matchId}`,
           tag: `match-${matchId}`,
+          dringend: true,
         }).catch(() => undefined);
       }
     }

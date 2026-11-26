@@ -401,11 +401,20 @@ export async function sendePushAnNutzer(
   if (nutzerId == null) return false;
 
   // Ruhezeit prüfen (deutsche Zeit, nicht UTC)
+  /*
+   * Ruhezeit 22–6 Uhr (deutsche Zeit).
+   *
+   * **Nicht** `Number(format(...))`: `Intl` liefert im deutschen Gebietsschema
+   * `"6 Uhr"`, und `Number("6 Uhr")` ist `NaN` — jeder Vergleich war damit
+   * `false`, der Filter hat nie gegriffen.
+   */
   if (!nachricht.dringend) {
     const stunde = Number(
-      new Intl.DateTimeFormat('de-DE', { hour: 'numeric', hour12: false, timeZone: 'Europe/Berlin' }).format(new Date()),
-    );
-    if (stunde >= 22 || stunde < 8) return false;
+      new Intl.DateTimeFormat('de-DE', { hour: '2-digit', hour12: false, timeZone: 'Europe/Berlin' })
+        .formatToParts(new Date())
+        .find((t) => t.type === 'hour')?.value ?? '0',
+    ) % 24;
+    if (stunde >= 22 || stunde < 6) return false;
   }
 
   try {

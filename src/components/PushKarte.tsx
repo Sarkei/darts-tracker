@@ -16,6 +16,40 @@ import { Bell, BellOff, Check, Loader2, Smartphone } from 'lucide-react';
 
 type Status = { angemeldet: number; konfiguriert: boolean };
 
+type KategorieZeile = { kategorie: string; titel: string; beschreibung: string; aktiv: boolean };
+
+type Verlaufszeile = {
+  kategorie: string;
+  ereignis: string;
+  titel: string;
+  text: string;
+  url: string | null;
+  stand: string;
+  grund: string | null;
+  zeit: string;
+};
+
+/** Wie die Unterdrückungs-Gründe in der App heissen. */
+const GRUND_TEXT: Record<string, string> = {
+  'kategorie-aus': 'Art ist ausgeschaltet',
+  'ausserhalb-zeitfenster': 'nicht im Zeitfenster',
+  ruhezeit: 'Ruhezeit (22–6 Uhr)',
+  tageslimit: 'Tageslimit der Art erreicht',
+  'kein-geraet': 'kein Gerät angemeldet',
+};
+
+/**
+ * Überschrift in den Listen — als Inline-Stil, weil die Apps unterschiedliche
+ * Tailwind-Farbnamen haben (`brand`, `leaf`, `accent`) oder gar keine.
+ */
+const ueberschrift: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: 'var(--muted, #55635c)',
+};
+
 /** Holt den Auth-Header der jeweiligen App (Token liegt in unterschiedlichen Schlüsseln). */
 function authHeader(): Record<string, string> {
   const kandidaten = ['vrtx_jwt', 'token', 'mealplanner.token', 'darts-token', 'auth_token'];
@@ -104,10 +138,12 @@ const knopfLeise: React.CSSProperties = {
 
 export default function PushKarte({
   basis = '/api/push',
-  titel = 'Push-Benachrichtigungen',
+  kategorienBasis = '/api/benachrichtigungen',
+  titel = 'Benachrichtigungen',
   beschreibung = 'Nachrichten direkt aufs Handy — auch wenn die App geschlossen ist.',
 }: {
   basis?: string;
+  kategorienBasis?: string;
   titel?: string;
   beschreibung?: string;
 }) {
@@ -115,6 +151,9 @@ export default function PushKarte({
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null);
   const [diesesGeraet, setDiesesGeraet] = useState(false);
+  const [kategorien, setKategorien] = useState<KategorieZeile[]>([]);
+  const [verlauf, setVerlauf] = useState<Verlaufszeile[]>([]);
+  const [verlaufOffen, setVerlaufOffen] = useState(false);
 
   const f = faehigkeit();
 
@@ -132,6 +171,41 @@ export default function PushKarte({
       setDiesesGeraet(Boolean(sub));
     } catch {
       setDiesesGeraet(false);
+    }
+    // Welche Arten sind an, und was ist zuletzt rausgegangen?
+    try {
+      const k = await fetch(`${kategorienBasis}/kategorien`, { headers: authHeader() });
+      if (k.ok) {
+        const d = (await k.json()) as { kategorien?: KategorieZeile[] };
+        setKategorien(d.kategorien ?? []);
+      }
+    } catch {
+      /* Server ohne Kategorien-Endpunkt — dann bleibt die Liste leer */
+    }
+    try {
+      const v = await fetch(`${kategorienBasis}/verlauf?limit=12`, { headers: authHeader() });
+      if (v.ok) {
+        const d = (await v.json()) as { verlauf?: Verlaufszeile[] };
+        setVerlauf(d.verlauf ?? []);
+      }
+    } catch {
+      /* dito */
+    }
+  };
+
+  const umschalten = async (kategorie: string, aktiv: boolean) => {
+    // Sofort umschalten, damit der Tipp nicht hängt; bei Fehler zurückdrehen.
+    setKategorien((alt) => alt.map((k) => (k.kategorie === kategorie ? { ...k, aktiv } : k)));
+    try {
+      const r = await fetch(`${kategorienBasis}/kategorien`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify({ kategorie, aktiv }),
+      });
+      if (!r.ok) throw new Error('abgelehnt');
+    } catch {
+      setKategorien((alt) => alt.map((k) => (k.kategorie === kategorie ? { ...k, aktiv: !aktiv } : k)));
+      setMeldung({ art: 'fehler', text: 'Einstellung konnte nicht gespeichert werden.' });
     }
   };
 
@@ -315,6 +389,111 @@ export default function PushKarte({
         >
           {meldung.text}
         </p>
+      )}
+
+      {/* ── Was benachrichtigt wird ─────────────────────────────────────── */}
+      {kategorien.length > 0 && (
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--line, #dde3df)', paddingTop: 12 }}>
+          <p style={ueberschrift}>Was du bekommst</p>
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column' }}>
+            {kategorien.map((k) => (
+              <label
+                key={k.kategorie}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  padding: '8px 0',
+                  borderBottom: '1px solid var(--line, #dde3df)',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={k.aktiv}
+                  onChange={(e) => void umschalten(k.kategorie, e.target.checked)}
+                  style={{
+                    marginTop: 2,
+                    width: 16,
+                    height: 16,
+                    flexShrink: 0,
+                    accentColor: 'var(--accent, #2f7d5a)',
+                    cursor: 'pointer',
+                  }}
+                />
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--ink, #16211c)' }}>
+                    {k.titel}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 10.5, lineHeight: 1.4, color: 'var(--muted, #55635c)' }}>
+                    {k.beschreibung}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <p style={{ marginTop: 8, fontSize: 10, lineHeight: 1.4, color: 'var(--muted, #55635c)' }}>
+            Ruhezeit 22–6 Uhr. Höchstens sechs Meldungen je Art und Tag. Dringendes (Tore, Anpfiff,
+            Freigaben) geht immer durch.
+          </p>
+        </div>
+      )}
+
+      {/* ── Was zuletzt rausging ───────────────────────────────────────── */}
+      {verlauf.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: '1px solid var(--line, #dde3df)', paddingTop: 12 }}>
+          <button
+            type="button"
+            onClick={() => setVerlaufOffen((o) => !o)}
+            style={{
+              display: 'flex',
+              width: '100%',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'transparent',
+              border: 0,
+              padding: 0,
+              cursor: 'pointer',
+            }}
+          >
+            <span style={ueberschrift}>Zuletzt gesendet</span>
+            <span style={{ fontSize: 10.5, color: 'var(--muted, #55635c)' }}>
+              {verlaufOffen ? 'ausblenden' : `${verlauf.length} ansehen`}
+            </span>
+          </button>
+
+          {verlaufOffen && (
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {verlauf.map((v, i) => {
+                const angekommen = v.stand === 'gesendet';
+                return (
+                  <div
+                    key={`${v.zeit}-${v.ereignis}-${i}`}
+                    style={{
+                      borderRadius: 8,
+                      padding: '7px 9px',
+                      background: 'var(--surface-2, #f4f6f5)',
+                      opacity: angekommen ? 1 : 0.72,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink, #16211c)' }}>{v.titel}</span>
+                      <span style={{ flexShrink: 0, fontSize: 9.5, color: 'var(--muted, #55635c)' }}>{v.zeit}</span>
+                    </div>
+                    <p style={{ margin: '2px 0 0', fontSize: 10.5, lineHeight: 1.4, color: 'var(--muted, #55635c)' }}>
+                      {v.text}
+                    </p>
+                    {!angekommen && (
+                      <p style={{ margin: '4px 0 0', fontSize: 9.5, fontWeight: 600, color: 'var(--danger, #b4453a)' }}>
+                        nicht zugestellt: {v.grund ? (GRUND_TEXT[v.grund] ?? v.grund) : 'unbekannt'}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
