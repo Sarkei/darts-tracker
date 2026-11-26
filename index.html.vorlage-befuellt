@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Darts</title>
+
+    <!--
+      Icons und Manifest. Werden von kit/build.py erzeugt — nicht von Hand anlegen.
+      Das badge-96.png ist die einfarbige Silhouette für Push-Mitteilungen; fehlt sie,
+      zeigt Android ein weißes Quadrat und die Apps sind nicht zu unterscheiden.
+    -->
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16.png" sizes="16x16" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#101312" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Darts" />
+    <meta name="description" content="Darts — eigene App." />
+
+    <!--
+      Design VOR dem ersten Bild setzen.
+      Sonst malt der Browser zuerst mit den hellen Standardwerten und blendet die dunkle
+      Fassung sichtbar darüber — genau das hat Tim schon zurückgemeldet.
+    -->
+    <script>
+      (function () {
+        try {
+          var gespeichert = localStorage.getItem("design.theme");
+          var design = gespeichert === "light" ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", design);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,30 +1,36 @@
 {
-  "name": "Darts Tracker",
+  "name": "Darts",
   "short_name": "Darts",
+  "description": "Darts — eigene App.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#101312",
+  "background_color": "#0e1211",
   "theme_color": "#101312",
+  "lang": "de",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
-  ]
+  ],
+  "_hinweis": "Akzent dieser App: #d27a81 — steht in kit/paletten.json"
 }
