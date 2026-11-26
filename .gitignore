@@ -7,3 +7,6 @@ server.js
 .DS_Store
 tmp/
 test-results/
+
+# VAPID-Schlüssel (Push) — gehören nicht ins Repo, liegen im Container unter /app/push-keys.env
+push-keys.env

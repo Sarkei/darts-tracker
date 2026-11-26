@@ -108,6 +108,9 @@ export type Kategorie = keyof typeof KATEGORIEN;
 const RHYTHMUS_FENSTER: Record<string, { von: number; bis: number }> = {
   morgen: { von: 6, bis: 9 },
   mittag: { von: 11, bis: 14 },
+  // Eigener Nachmittag: der Ernährungsstand läuft um 15 Uhr, das Mittagsfenster
+  // endet um 14 — mit „mittag" wäre die Meldung nie rausgegangen.
+  nachmittag: { von: 14, bis: 17 },
   abend: { von: 17, bis: 21 },
   sofort: { von: 0, bis: 24 },
 };
