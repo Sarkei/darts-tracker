@@ -506,7 +506,7 @@ export function CameraPage({ matchId, onNavigate }: Props) {
     // Farben aus dem Designsystem (Canvas kann keine CSS-Variablen auflösen)
     const rootStyle = getComputedStyle(document.documentElement);
     const token = (name: string) => rootStyle.getPropertyValue(name).trim();
-    const accent = token('--accent') || '#4fbf8b';
+    const accent = token('--accent') || '#d27a81';
     const warn = token('--warn') || '#a8701c';
     ctx.globalAlpha = 1;
 

@@ -2,12 +2,8 @@
 @import '../design/farben.css';
 /* Farben kommen aus knowledge/design-system/kit/paletten.json.
    Das Gerüst (geruest.css) bleibt draußen — diese App hat eigene Komponenten. */
-/* ============================================================
-   Tim-Designsystem · Grau + Grün
-   Verbindlich für alle eigenen Anwendungen.
-   Farben, Typografie, Radien und Komponenten sind hier definiert.
-   Apps setzen nur diese Tokens ein — keine eigenen Hex-Werte.
-   ============================================================ */
+/* Zusatz-Tokens dieser App. Die Farben kommen aus design/farben.css
+   (kit/paletten.json) — hier nur, was das Kit nicht abdeckt (Schatten). */
 
    Das Gerüst (geruest.css) bleibt bewusst draußen — diese App hat eigene Komponenten. */
 
@@ -19,8 +15,7 @@
 
   /* Linien */
 
-  /* Akzent: Grün */
-  --on-accent-soft: #123a28;
+  --on-accent-soft: #803339;
 
   /* Status */
 
@@ -34,12 +29,19 @@
   color-scheme: light;
 }
 
+[data-theme='light'],
+:root {
+  --on-accent-soft: #803339;
+  --shadow-sm: 0 1px 2px rgb(18 26 22 / 0.06);
+  --shadow: 0 1px 2px rgb(18 26 22 / 0.05), 0 10px 30px -22px rgb(18 26 22 / 0.4);
+}
+
 [data-theme='dark'],
 .dark {
 
 
 
-  --on-accent-soft: #b9e8d0;
+  --on-accent-soft: #eac3c6;
 
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
